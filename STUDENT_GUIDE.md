@@ -48,10 +48,16 @@ The ALU does the math and the Register File stores the data, but who conducts th
     *   `ALUSrc`: Is the ALU's second input coming from a register (`rt`) or an immediate number?
     *   `Branch` / `Jump`: Are we changing the Program Counter (PC)?
     *   `MemWrite` / `MemToReg`: Are we interacting with Data Memory?
-    *   `ALUOp`: A 2-bit code passed to the *ALU Decoder* (which we built in Step 3) to finalize the exact math operation.
-*   **Implementation:** We use an `always_comb` block with a `case(opcode)` statement to flip these control flags on or off like a switchboard.
+    *   **ALUOp**: A 2-bit code passed to the *ALU Decoder* (which we built in Step 3) to finalize the exact math operation.
+    *   **Implementation:** We use an `always_comb` block with a `case(opcode)` statement to flip these control flags on or off like a switchboard.
 
----
+    ### Step 7: The Sign Extender (`signext.sv`)
+    Some MIPS instructions contain immediate numbers built right into the instruction code (like `addi $t0, $t1, -5`). 
+    *   **The Architect's Task:** A MIPS instruction is exactly 32 bits wide. In an I-type instruction, the opcode, registers, and other data take up the top 16 bits, leaving exactly 16 bits for the immediate number. However, our ALU only accepts 32-bit inputs!
+    *   **The Problem:** We cannot simply pad the front of a negative number with zeros. The 16-bit binary for `-1` is `1111111111111111`. If we pad it with zeros, it becomes `00000000000000001111111111111111`, which is the positive number `65535`!
+    *   **Implementation:** To convert a 16-bit number to a 32-bit number while preserving its sign (positive or negative), we must perform **Sign Extension**. We look at the Most Significant Bit (MSB, which is bit 15) of the 16-bit input. We then copy that exact bit into the top 16 bits of our new 32-bit output. We can do this cleanly in SystemVerilog using the replication operator: `{{16{a[15]}}, a}`.
+
+    ---
 
 
 ### Next Steps for You:
