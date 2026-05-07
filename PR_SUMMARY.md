@@ -11,10 +11,12 @@ Establish the foundational arithmetic and control decoding logic for the MIPS32 
     - Two asynchronous read ports.
     - One synchronous write port (on `posedge clk`).
     - Hardwired Register 0 (`$zero`) to always return 0, ensuring architectural compliance.
+- **`src/single_cycle_computer/maindec.sv`**: Implemented the Main Decoder.
+    - Accurately translates 6-bit opcodes into the 9-bit control bus (`regwrite, regdst, alusrc, branch, memwrite, memtoreg, jump, aluop`).
+- **`tests/single_cycle_computer/tb_maindec.sv`**: Built an exhaustive testbench to verify correct signal generation for `R-type`, `lw`, `sw`, `beq`, `addi`, and `j`.
 - **`tests/single_cycle_computer/tb_regfile.sv`**: Built a testbench to verify synchronous writes, asynchronous reads, and the immutability of Register 0.
 - **`tests/single_cycle_computer/tb_alu.sv`**: Built an exhaustive testbench to verify combinational and sequential operations.
-- **Infrastructure**: Configured basic testing infrastructure using Icarus Verilog.
+- **Infrastructure & Pedagogy**: Configured basic testing infrastructure using Icarus Verilog and drafted the `STUDENT_GUIDE.md` detailing architectural rationale.
 
 ## Pending in this Epic
-- Implement the Main Decoder (`maindec.sv`).
 - Implement Sign Extension (`signext.sv`).
