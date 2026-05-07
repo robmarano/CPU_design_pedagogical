@@ -1,0 +1,8 @@
+alu_sim
+maindec_sim
+regfile_sim
+signext_sim
+*.vcd
+.gemini/
+cpu-architect/
+cpu-architect.skill
