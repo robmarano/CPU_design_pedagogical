@@ -17,3 +17,8 @@ All notable changes to this project will be documented in this file.
 - `ARCHITECTURE.md`: Added architectural documentation and Mermaid data-flow diagrams.
 - `PR_SUMMARY.md`: Added PR tracking documentation.
 - `TODO.md`: Added tracking for unimplemented Phase 1 components.
+
+### Fixed
+- `alu.sv`: Fixed 64-bit sign extension truncation bug during `MULT` operation and added `initial` block to prevent `X` state propagation.
+- `tb_alu.sv`: Expanded test coverage to include all ALU operations (AND, OR, NOR, SLT, DIV) and fixed false-positive pass messages on error.
+- `.gitignore`: Fixed newline formatting issue.

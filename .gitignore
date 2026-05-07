@@ -1,1 +1,8 @@
-alu_sim\n*.vcd\n.gemini/\ncpu-architect/\ncpu-architect.skill
+alu_sim
+maindec_sim
+regfile_sim
+signext_sim
+*.vcd
+.gemini/
+cpu-architect/
+cpu-architect.skill

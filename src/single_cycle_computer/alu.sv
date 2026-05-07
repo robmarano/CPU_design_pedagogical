@@ -10,6 +10,11 @@ module alu(
 
     logic [31:0] hi, lo; // Separate 32-bit registers for MIPS HI and LO
 
+    initial begin
+        hi = 32'b0;
+        lo = 32'b0;
+    end
+
     always_comb begin
         case (alucontrol)
             4'b0000: result = a & b;                 // AND
@@ -29,7 +34,8 @@ module alu(
     // Sequential logic for MULT and DIV
     always_ff @(negedge clk) begin
         if (alucontrol == 4'b1000) begin // MULT
-            {hi, lo} <= $signed(a) * $signed(b);
+            // Cast to 64-bit signed before multiplication to preserve the full 64-bit product
+            {hi, lo} <= $signed({{32{a[31]}}, a}) * $signed({{32{b[31]}}, b});
         end else if (alucontrol == 4'b1001) begin // DIV
             if (b != 0) begin
                 lo <= $signed(a) / $signed(b); // LO = Quotient

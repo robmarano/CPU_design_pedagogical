@@ -17,8 +17,9 @@ Establish the foundational arithmetic and control decoding logic for the MIPS32 
 - **`tests/single_cycle_computer/tb_signext.sv`**: Built a testbench to verify positive, negative, and edge-case (largest positive/negative) integer extensions.
 - **`tests/single_cycle_computer/tb_maindec.sv`**: Built an exhaustive testbench to verify correct signal generation for `R-type`, `lw`, `sw`, `beq`, `addi`, and `j`.
 - **`tests/single_cycle_computer/tb_regfile.sv`**: Built a testbench to verify synchronous writes, asynchronous reads, and the immutability of Register 0.
-- **`tests/single_cycle_computer/tb_alu.sv`**: Built an exhaustive testbench to verify combinational and sequential operations.
-- **Infrastructure & Pedagogy**: Configured basic testing infrastructure using Icarus Verilog and drafted the `STUDENT_GUIDE.md` detailing architectural rationale.
+- **`tests/single_cycle_computer/tb_alu.sv`**: Built an exhaustive testbench to verify combinational and sequential operations, covering ADD, SUB, AND, OR, NOR, SLT, MULT, DIV, MFHI, and MFLO. Addressed AI review feedback by properly failing CI on `$error`.
+- **Infrastructure & Pedagogy**: Configured basic testing infrastructure using Icarus Verilog, fixed `.gitignore` formatting, and drafted the `STUDENT_GUIDE.md` detailing architectural rationale.
+- **AI Review Fixes**: Fixed 64-bit casting truncation in `alu.sv` for the `MULT` instruction and initialized `hi`/`lo` registers to avoid `X` states on startup.
 
 ## Pending in this Epic
 - All foundational datapath and control components for Phase 1 are complete. The next Epic will involve memory simulation and integrating these modules into the `datapath.sv` and `computer.sv` top-level wrappers.
