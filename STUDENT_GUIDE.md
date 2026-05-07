@@ -31,5 +31,15 @@ An architect's job isn't done when the code compiles; it's done when the hardwar
 *   **The Architect's Task:** Write a testbench (`tb_alu.sv`). You must simulate the clock, inject fake inputs (`a=10`, `b=5`), and tell the ALU to add. You then write an `if` statement: *If the result is not 15, throw an error!*
 *   **Waveforms:** We use `$dumpfile("tb_alu.vcd")` to generate waveforms. Professional architects spend hours staring at these waveforms to ensure signals arrive at exactly the right nanosecond.
 
+### Step 5: Designing the Register File (`regfile.sv`)
+Now that our ALU can calculate, we need a place to store data. In MIPS, we use a **Register File**.
+*   **The Architect's Task:** Build a high-speed storage array.
+    1.  **Storage:** We need 32 different 32-bit "buckets" (registers).
+    2.  **Dual Read Ports:** Most MIPS instructions (like `add $s1, $s2, $s3`) need to read *two* values at once. Our hardware must allow reading from two different addresses simultaneously without waiting for a clock tick (*Asynchronous Read*).
+    3.  **Single Write Port:** We only write one result back at a time. This happens only on the "tick" of the clock (*Synchronous Write*).
+    4.  **The $zero Rule:** Register 0 is special. In MIPS, it must *always* return 0, no matter what software tries to write to it. As an architect, you implement this by hardcoding the output logic to return `0` if the address is `0`.
+
+---
+
 ### Next Steps for You:
 In our next lesson, we will build the **Register File** (`regfile.sv`). Prepare by looking at the MIPS Green Sheet: How many registers are there? How wide are they? What is special about Register `$zero`?
