@@ -13,10 +13,12 @@ Establish the foundational arithmetic and control decoding logic for the MIPS32 
     - Hardwired Register 0 (`$zero`) to always return 0, ensuring architectural compliance.
 - **`src/single_cycle_computer/maindec.sv`**: Implemented the Main Decoder.
     - Accurately translates 6-bit opcodes into the 9-bit control bus (`regwrite, regdst, alusrc, branch, memwrite, memtoreg, jump, aluop`).
+- **`src/single_cycle_computer/signext.sv`**: Implemented the 16-to-32-bit Sign Extension module using SystemVerilog replication operators.
+- **`tests/single_cycle_computer/tb_signext.sv`**: Built a testbench to verify positive, negative, and edge-case (largest positive/negative) integer extensions.
 - **`tests/single_cycle_computer/tb_maindec.sv`**: Built an exhaustive testbench to verify correct signal generation for `R-type`, `lw`, `sw`, `beq`, `addi`, and `j`.
 - **`tests/single_cycle_computer/tb_regfile.sv`**: Built a testbench to verify synchronous writes, asynchronous reads, and the immutability of Register 0.
 - **`tests/single_cycle_computer/tb_alu.sv`**: Built an exhaustive testbench to verify combinational and sequential operations.
 - **Infrastructure & Pedagogy**: Configured basic testing infrastructure using Icarus Verilog and drafted the `STUDENT_GUIDE.md` detailing architectural rationale.
 
 ## Pending in this Epic
-- Implement Sign Extension (`signext.sv`).
+- All foundational datapath and control components for Phase 1 are complete. The next Epic will involve memory simulation and integrating these modules into the `datapath.sv` and `computer.sv` top-level wrappers.
