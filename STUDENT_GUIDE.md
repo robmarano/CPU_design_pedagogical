@@ -62,3 +62,36 @@ The ALU does the math and the Register File stores the data, but who conducts th
 
 ### Next Steps for You:
 In our next lesson, we will build the **Register File** (`regfile.sv`). Prepare by looking at the MIPS Green Sheet: How many registers are there? How wide are they? What is special about Register `$zero`?
+# Epic 2: The Memory Subsystem and Top-Level Wiring
+
+Welcome back, architects. We have built the engine (ALU), the switchboard (Decoder), the storage (Register File), and the adapter (Sign Extender). Now, we must build the fuel tank (Memory) and wire the entire system together to create our first fully functional **Single-Cycle CPU**.
+
+### Step 8: Instruction & Data Memory (`imem.sv` and `dmem.sv`)
+A computer must fetch instructions to execute and read/write data. In this Single-Cycle model, we use a **Harvard Architecture**, meaning we separate the memories so we can fetch an instruction and read/write data in the exact same clock tick.
+*   **The Architect's Task:** 
+    1.  **Instruction Memory (ROM):** Build a read-only memory. It takes a 32-bit address (the Program Counter) and instantly outputs the 32-bit instruction. Because MIPS memory is *byte-addressable* but instructions are *word-aligned* (32 bits = 4 bytes), we must shift the address right by 2 (divide by 4) to access the correct 32-bit word in our array.
+    2.  **Data Memory (RAM):** Build a memory that can both read and write. It reads combinationally (instantly) but writes synchronously (on the clock edge, only if `we` is high).
+*   **Initialization:** To test our CPU, we must load a program. We use the SystemVerilog `$readmemh` function to load a hexadecimal machine code file (`memfile.dat`) directly into our memory arrays when the simulation starts.
+
+### Step 9: The Program Counter (`dff.sv`)
+The Program Counter (PC) is the heartbeat of the CPU. It tells the Instruction Memory exactly which instruction to fetch next.
+*   **The Architect's Task:** Build a 32-bit D-Flip-Flop (DFF) with an asynchronous reset. 
+    *   On every rising clock edge, it updates the PC to the new address.
+    *   When the system is reset, it forces the PC to `0x00000000` so the computer starts executing from the very beginning.
+
+### Step 10: The Datapath (`datapath.sv`)
+Now, we act as the electricians. The Datapath wrapper module takes all the basic components we built in Epic 1 and wires them together.
+*   **The Architect's Task:** 
+    *   Instantiate the ALU, Register File, Sign Extender, and PC.
+    *   Connect them using internal wires (`logic [31:0]`).
+    *   We need multiplexers (`mux2.sv`) to route signals based on the Control Unit. For example, a mux decides if the ALU's second input is a Register (`B`) or the Sign Extended Immediate, based on the `ALUSrc` control signal.
+    *   We also build the **Branch Logic**: calculating `PC + 4` and adding the shifted immediate to compute the branch target.
+
+### Step 11: The CPU and Computer (`cpu.sv` and `computer.sv`)
+Finally, we put the processor in the motherboard.
+*   **The Architect's Task:** 
+    1.  **`cpu.sv`:** Combine the Datapath module and the Control Unit modules (`maindec`, `aludec`). This is the complete processor chip.
+    2.  **`computer.sv`:** Instantiate the CPU, the Instruction Memory, and the Data Memory. Wire the CPU's PC to the Instruction Memory, and the CPU's ALU Result to the Data Memory's Address port. 
+*   **The Final Test:** Once this is done, our machine will finally run real software!
+
+---

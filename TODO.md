@@ -3,13 +3,15 @@
 This file serves as a reminder for architectural components that have yet to be designed or implemented.
 
 ## Phase 1: Single-Cycle Datapath
-- [ ] **Register File** (`regfile.sv`): 32x32-bit, dual-read async, single-write sync.
-- [ ] **Main Decoder** (`maindec.sv`): Combinational mapping of 6-bit opcodes to core control signals (RegWrite, MemWrite, Branch, etc.).
-- [ ] **Sign Extension** (`signext.sv`): 16-bit to 32-bit immediate extension.
-- [ ] **Program Counter** (`pc.sv` / `dff.sv`): 32-bit state register.
+- [x] **ALU** (`alu.sv`) & **ALU Decoder** (`aludec.sv`)
+- [x] **Register File** (`regfile.sv`): 32x32-bit, dual-read async, single-write sync.
+- [x] **Main Decoder** (`maindec.sv`): Combinational mapping of 6-bit opcodes to core control signals.
+- [x] **Sign Extension** (`signext.sv`): 16-bit to 32-bit immediate extension.
+- [ ] **Program Counter** (`dff.sv`): 32-bit state register.
 - [ ] **Instruction Memory** (`imem.sv`): ROM simulation.
 - [ ] **Data Memory** (`dmem.sv`): RAM simulation.
 - [ ] **Datapath Wrapper** (`datapath.sv`): Structural wiring of all single-cycle components.
+- [ ] **CPU Wrapper** (`cpu.sv`): Combines Control Unit (`maindec` + `aludec`) with the Datapath.
 - [ ] **Top-Level Computer** (`computer.sv`): Encapsulation of CPU and memories.
 
 ## Phase 2: Multi-Cycle Datapath

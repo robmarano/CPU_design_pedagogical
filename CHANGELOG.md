@@ -2,7 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased] - Phase 1 Foundation
+## [Unreleased] - Phase 1 Memory Integration
+### Added
+- *Pending*
+
+## [Released] - Phase 1 Foundation
 ### Added
 - `alu.sv`: 32-bit ALU with arithmetic, logical, and sequential MULT/DIV capabilities.
 - `aludec.sv`: ALU Control Decoder based on MIPS Green Sheet.
