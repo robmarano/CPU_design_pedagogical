@@ -39,7 +39,20 @@ Now that our ALU can calculate, we need a place to store data. In MIPS, we use a
     3.  **Single Write Port:** We only write one result back at a time. This happens only on the "tick" of the clock (*Synchronous Write*).
     4.  **The $zero Rule:** Register 0 is special. In MIPS, it must *always* return 0, no matter what software tries to write to it. As an architect, you implement this by hardcoding the output logic to return `0` if the address is `0`.
 
+### Step 6: The Main Decoder (`maindec.sv`) - The Brain of the CPU
+The ALU does the math and the Register File stores the data, but who conducts the orchestra? That is the job of the **Main Decoder**.
+*   **The Architect's Task:** Build the master control unit. The CPU fetches a 32-bit instruction from memory. The top 6 bits (bits 31:26) are the **opcode**. The Main Decoder looks *only* at these 6 bits and instantly decides how every other component in the CPU should behave.
+*   **Control Signals:** Based on the opcode (e.g., `lw`, `sw`, `beq`, `R-type`), the decoder outputs a combination of 1-bit flags:
+    *   `RegWrite`: Should we save data to the Register File?
+    *   `RegDst`: Are we writing to the `rd` or `rt` register?
+    *   `ALUSrc`: Is the ALU's second input coming from a register (`rt`) or an immediate number?
+    *   `Branch` / `Jump`: Are we changing the Program Counter (PC)?
+    *   `MemWrite` / `MemToReg`: Are we interacting with Data Memory?
+    *   `ALUOp`: A 2-bit code passed to the *ALU Decoder* (which we built in Step 3) to finalize the exact math operation.
+*   **Implementation:** We use an `always_comb` block with a `case(opcode)` statement to flip these control flags on or off like a switchboard.
+
 ---
+
 
 ### Next Steps for You:
 In our next lesson, we will build the **Register File** (`regfile.sv`). Prepare by looking at the MIPS Green Sheet: How many registers are there? How wide are they? What is special about Register `$zero`?
