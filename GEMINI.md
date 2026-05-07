@@ -65,3 +65,12 @@ Once the Pipelined CPU is mathematically stable, integrate the memory wall.
 1.  **Iterative Testing:** Write comprehensive testbenches (`tb_*.sv`) for every phase. Use `.vcd` waveform logging to physically verify signals.
 2.  **Performance Counters:** The top-level `computer.sv` module must track: Total Clock Cycles, Instruction Count, Cache Hits, Cache Misses, and dynamically output the Effective CPI.
 3.  **Strict Handshaking:** Do not drop instructions during a `mem_stall`. Ensure the pipeline flawlessly resumes execution once the Cache Miss completes.
+
+---
+
+## 5. Pedagogical Workflow (Student Guides)
+Because the target audience consists of freshman and sophomore ECE and CS students, the agent MUST generate a step-by-step `STUDENT_GUIDE.md` for every major epic (e.g., Creating the ISA, Basic Datapath Components, Single-Cycle Integration). 
+*   **Tone:** Instructive, encouraging, and clear.
+*   **Content:** It must explicitly teach students how to "roll their sleeves up" and perform the job of a Computer Architect.
+*   **Scope:** Guide them through understanding the requirement (using textbooks/Green Sheet), designing the architecture (Mermaid diagrams), implementing in SystemVerilog, and verifying via testbenches.
+*   **Process:** This guide must be continuously updated and committed alongside the PR for each epic.
