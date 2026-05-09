@@ -16,7 +16,9 @@ module main_memory(
         for (i = 0; i < 256; i = i + 1) begin
             RAM[i] = 32'b0;
         end
-        $readmemh("programs/memfile_cache.dat", RAM);
+        // NOTE: Make sure to change the file name for different tests!
+        // $readmemh("programs/memfile_exc_before.dat", RAM);
+        // We will read it from the testbench using hierarchical names to avoid hardcoding here!
     end
 
     // FSM to simulate 5-cycle memory latency

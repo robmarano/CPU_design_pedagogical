@@ -211,3 +211,34 @@ As an architect, your design decisions must be backed by data. We ran our array 
     *   Our CPI dropped from 2.00 to **1.76**, a 12% performance increase from a trivially simple Cache implementation!
 
 ---
+
+# Epic 6: Phase 5 - Exceptions and Traps
+
+Welcome to Phase 5. Our CPU is fast, and it has a cache, but it is currently "fragile." If a program executes an illegal instruction, or needs to ask the Operating System for help (like printing to the screen or reading a file), the CPU has no way to handle it safely.
+
+We need **Exceptions**.
+
+### Step 22: Coprocessor 0 (CP0)
+MIPS handles exceptions using a completely separate mini-processor called **Coprocessor 0 (CP0)**.
+*   **The Architect's Task:** We built `cp0.sv` containing three crucial registers:
+    1.  **Status (Register 12):** Keeps track of whether we are currently *in* an exception (the `EXL` bit).
+    2.  **Cause (Register 13):** Stores a number explaining *why* the CPU crashed (e.g., 8 for a `syscall`).
+    3.  **EPC (Register 14):** The Exception Program Counter. It acts as a bookmark, storing the exact PC of the instruction that caused the crash so we can return to it later.
+*   **Interaction:** We must use special instructions to talk to CP0. `mtc0` (Move To Coprocessor 0) and `mfc0` (Move From Coprocessor 0).
+
+### Step 23: Precise Exceptions
+When an exception occurs in a pipelined processor, it causes chaos. Imagine instruction 1 is a `syscall`, but it is followed by instructions 2, 3, and 4 which are already halfway through the pipeline!
+*   **The Problem:** If we trap immediately, we might permanently execute instructions that were supposed to be cancelled. 
+*   **The Solution (Precise Exceptions):** We do not trigger the hardware exception until the offending instruction reaches the **MEM stage**. 
+*   **The Architect's Task:** In `datapath.sv`, we wired `cp0` into the MEM stage. When a `syscall` reaches MEM:
+    1. We save the PC to the EPC.
+    2. We change the PC to the Exception Handler address (we chose `0x00000080`).
+    3. **The Great Flush:** We instantly assert a `flush_exc` signal that wipes out the `IF/ID`, `ID/EX`, and `EX/MEM` registers. Any instructions that sneaked into the pipeline behind the `syscall` are violently erased, preventing them from writing bad data.
+
+### Step 24: The Software Handler (`exception_after.asm`)
+Now that the hardware works, we must write the software to handle the crash.
+*   When the CPU jumps to `0x00000080`, it executes our Handler.
+*   The Handler uses `mfc0 , 14` to read the bookmark (EPC).
+*   It adds 4 to the bookmark (`addi , , 4`) because we want to return to the instruction *after* the `syscall`, not the `syscall` itself (otherwise we'd be stuck in an infinite loop!).
+*   It saves the new bookmark (`mtc0 , 14`).
+*   Finally, it calls `eret` (Exception Return). The hardware sees `eret`, loads the EPC back into the PC, and execution resumes perfectly as if nothing ever happened!
