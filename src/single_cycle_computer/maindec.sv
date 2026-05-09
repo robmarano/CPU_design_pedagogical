@@ -20,9 +20,10 @@ module maindec(
             6'b100011: controls = 9'b101001000; // lw
             6'b101011: controls = 9'b001010000; // sw
             6'b000100: controls = 9'b000100001; // beq
+            6'b000101: controls = 9'b000100001; // bne (same control path, CPU adds ~zero)
             6'b001000: controls = 9'b101000000; // addi
             6'b000010: controls = 9'b000000100; // j
-            default:   controls = 9'bxxxxxxxxx; // Illegal op
+            default:   controls = 9'b000000000; // Default to 0 instead of X
         endcase
     end
 

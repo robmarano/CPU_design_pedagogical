@@ -2,7 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased] - Phase 1 Foundation
+## [Unreleased] - Phase 1 Memory Integration
+### Added
+- `dff.sv`: Program Counter state register.
+- `imem.sv`: Instruction Memory (ROM) initialized via `$readmemh`.
+- `dmem.sv`: Data Memory (RAM) with combinational read and synchronous write.
+- `adder.sv`: PC increment and branch target logic.
+- `sl2.sv`: Shift-left-by-2 module.
+- `mux2.sv`: 2-to-1 multiplexer.
+- `datapath.sv`: Top-level datapath wrapper.
+- `cpu.sv`: CPU wrapper combining Control Unit and Datapath.
+- `computer.sv`: Top-level wrapper combining CPU, IMEM, and DMEM.
+- `tb_computer.sv`: Full system integration testbench.
+- `STUDENT_GUIDE.md`: Added Epic 2 pedagogical instructions for memory and wrappers.
+
+### Fixed
+- `memfile.dat`: Fixed severe bug in machine code containing an infinite loop (`1000fff1`). Replaced with verified Harris & Harris `mipstest.asm` hex dump.
+
+## [Released] - Phase 1 Foundation
 ### Added
 - `alu.sv`: 32-bit ALU with arithmetic, logical, and sequential MULT/DIV capabilities.
 - `aludec.sv`: ALU Control Decoder based on MIPS Green Sheet.
