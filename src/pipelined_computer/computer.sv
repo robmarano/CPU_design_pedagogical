@@ -7,6 +7,7 @@ module computer(
 );
 
     logic [31:0] pc, instr, readdata;
+    logic        memread, mem_ready;
 
     // Instantiate the Pipelined CPU
     cpu mips (
@@ -15,9 +16,11 @@ module computer(
         .pcF(pc), 
         .instrF(instr), 
         .memwriteM(memwrite), 
+        .memreadM(memread),
         .aluoutM(dataadr), 
         .writedataM(writedata), 
-        .readdataM(readdata)
+        .readdataM(readdata),
+        .mem_ready(mem_ready)
     );
 
     // Instantiate Instruction Memory (Fetch Stage)
@@ -26,13 +29,16 @@ module computer(
         .rd(instr)
     );
 
-    // Instantiate Data Memory (Memory Stage)
-    dmem dmem (
+    // Instantiate Main Data Memory with 5-cycle Latency (Memory Stage)
+    main_memory dmem (
         .clk(clk), 
-        .we(memwrite), 
+        .reset(reset),
+        .mem_write(memwrite), 
+        .mem_read(memread),
         .a(dataadr), 
         .wd(writedata), 
-        .rd(readdata)
+        .rd(readdata),
+        .mem_ready(mem_ready)
     );
 
 endmodule

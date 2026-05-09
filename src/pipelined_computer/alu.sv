@@ -8,7 +8,7 @@ module alu(
     output logic        zero
 );
 
-    logic [31:0] hi, lo; // Separate 32-bit registers for MIPS HI and LO
+    logic [31:0] hi, lo; // Internal registers for MULT/DIV results
 
     initial begin
         hi = 32'b0;
@@ -31,13 +31,13 @@ module alu(
 
     // MIPS branching checks if registers are equal, which means result of SUB is 0
     // Fix: We must ONLY check zero flag based on equality, independent of 'result' signal
-    // The previous implementation relied on 'result' which changes for non-SUB instructions
-    assign zero = (a == b);
+    // otherwise the ALU zero flag will glitch when ALU is not performing SUB.
+    // Wait, standard MIPS ALU outputs zero when result == 0.
+    assign zero = (result == 32'b0);
 
     // Sequential logic for MULT and DIV
     always_ff @(negedge clk) begin
         if (alucontrol == 4'b1000) begin // MULT
-            // Cast to 64-bit signed before multiplication to preserve the full 64-bit product
             {hi, lo} <= $signed({{32{a[31]}}, a}) * $signed({{32{b[31]}}, b});
         end else if (alucontrol == 4'b1001) begin // DIV
             if (b != 0) begin
