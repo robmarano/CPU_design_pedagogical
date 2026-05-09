@@ -125,4 +125,15 @@ To keep our code organized, we split the FSM into two parts: the overall `contro
     3.  **State Memory:** A simple `always_ff @(posedge clk)` block updates `state <= nextstate`.
     4.  **Output Logic:** Another `always_comb` block looks at the current `state` and sets all the control wires (like `IRWrite` to save the instruction, or setting `ALUSrcB` to `2'b01` to add 4 to the PC during `FETCH`).
 
+### Step 15: Wiring the Multi-Cycle Datapath (`datapath.sv`)
+Now we assemble the physical components. Because we are reusing the ALU and Memory across different clock cycles, our plumbing requires more multiplexers and state registers.
+*   **The Architect's Task:**
+    1.  **Shared Memory:** Notice we only instantiate one `mem.sv`. We use a multiplexer (`IorD`) to choose whether the memory address comes from the `PC` (during FETCH) or `ALUOut` (during Data Memory Access).
+    2.  **State Registers:** Since data arrives at different times, we must catch it and hold it.
+        *   When we read an instruction from memory, we catch it in the `IR` (Instruction Register). It only updates when `IRWrite` is high.
+        *   When we read data from memory, we catch it in the `MDR` (Memory Data Register).
+        *   When we read from the Register File, we catch the two values in registers `A` and `B`.
+        *   When the ALU calculates a result, we catch it in `ALUOut`.
+    3.  **Shared ALU:** The ALU is now the hardest working component. During FETCH, we use it to add `PC + 4`. During DECODE, we use it to calculate the branch target address. During EXECUTE, we finally do the math requested by the instruction. We route the correct inputs to the ALU using large `mux4` (4-to-1) multiplexers, controlled by `ALUSrcA` and `ALUSrcB`.
+
 ---
