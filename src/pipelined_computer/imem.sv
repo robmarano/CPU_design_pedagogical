@@ -5,12 +5,12 @@ module imem(
     output logic [31:0] rd
 );
 
-    logic [31:0] RAM[0:63]; // 64 words (256 bytes) of instruction memory
+    logic [31:0] RAM[0:255]; // 256 words (1024 bytes) of instruction memory
 
     initial begin
         // Initialize memory with machine code from a file.
         // In a real synthesis environment, this might be a block RAM initialization.
-        $readmemh("memfile.dat", RAM);
+        $readmemh("programs/memfile_cache.dat", RAM);
     end
 
     // MIPS memory is byte-addressable, but instructions are 32-bit words.

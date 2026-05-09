@@ -35,14 +35,8 @@ module hazard(
     end
 
     // Forwarding to Decode Stage (for Branch Equality Check)
-    // BUG FIX: branch stalling handles dependencies on EX and MEM stages.
-    // If the dependency is in the MEM stage, we still stall until it reaches WB, or we forward from MEM!
-    // Actually, we can forward from MEM if it's an ALU result.
-    // Let's forward from MEM stage if it's an ALU result. If it's a MEM read, it was stalled, so the data is now in WB.
-    // Let's forward from both MEM and WB to ID? No, Harris & Harris only forwards from MEM to ID for branches. Wait, no.
-    // If we only forward from MEM, what if the dependency is in WB?
-    // Let's update forwardaD and forwardbD to just use simple logic: if it's in MEM, forward. If we stall correctly, it won't matter.
-    // Actually, branchstallD handles it.
+    // BUG FIX: branches check equality in the ID stage. 
+    // They must forward from the MEM stage if an ALU instruction immediately preceding it writes to the reg.
     assign forwardaD = (rsD != 0) && (rsD == writeregM) && regwriteM;
     assign forwardbD = (rtD != 0) && (rtD == writeregM) && regwriteM;
 
@@ -51,6 +45,10 @@ module hazard(
     assign lwstallD = memtoregE & ((rtE == rsD) | (rtE == rtD));
     
     // Branch Stall: We must stall a branch if it depends on an ALU result currently in EX or a Load currently in MEM
+    // BUG FIX: branch stall must also trigger if the branch depends on an ALU result in MEM? No, we forward from MEM.
+    // Wait, what if the instruction in EX is an ALU instruction? We stall 1 cycle. (Because we can't forward from EX to ID combo logic).
+    // So if regwriteE and (writeregE == rsD | writeregE == rtD), we stall!
+    // What if the instruction in MEM is a LOAD? We stall 1 cycle. (We can't forward load data from MEM because the load data comes from memory at the end of MEM cycle!).
     assign branchstallD = branchD & 
                           ((regwriteE & (writeregE == rsD | writeregE == rtD)) | 
                            (memtoregM & (writeregM == rsD | writeregM == rtD)));
@@ -59,8 +57,6 @@ module hazard(
     assign stallD = lwstallD | branchstallD;
     assign stallF = stallD;
     
-    // BUG FIX: flushE MUST be high on a stall (to insert a bubble) OR when a branch is taken (pcsrcD) 
-    // to flush the instruction that was fetched in the branch delay slot (which is now in ID, moving to EX).
     assign flushE = stallD | pcsrcD;
 
 endmodule

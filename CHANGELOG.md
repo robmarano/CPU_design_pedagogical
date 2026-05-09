@@ -2,11 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased] - Phase 3 Pipelined Datapath
+## [Unreleased] - Phase 4 Cache Integration
 ### Added
-- *Pending*
+- `assembler.py`: Custom Python MIPS assembler to support rapid program testing.
+- `cache_test.asm`: Array summation program designed to prove cache locality benefits.
+- `STUDENT_GUIDE.md`: Added Step 19 & 20 for Cache and Memory Hierarchy.
 
-## [Released] - Phase 2 Multi-Cycle Datapath
+## [Released] - Phase 3 Pipelined Datapath
 ### Added
 - `mainfsm.sv`: Multi-cycle Finite State Machine.
 - `controller.sv`: Multi-cycle Control Unit wrapper.

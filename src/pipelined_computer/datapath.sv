@@ -2,6 +2,7 @@
 
 module datapath(
     input  logic        clk, reset,
+    input  logic        mem_stall, // Added for cache/memory latency
     input  logic        memtoregE, memtoregM, memtoregW,
     input  logic        pcsrcD, branchD,
     input  logic        alusrcE, regdstE,
@@ -37,7 +38,7 @@ module datapath(
     logic [4:0]  rsE, rtE, rdE, writeregE;
     logic [31:0] srcaE, srcbE, writedataE;
     logic [31:0] aluoutE;
-    logic        zeroE; // Unused in branch-in-ID architecture
+    logic        zeroE;
     
     // MEM stage logic
     logic [4:0]  writeregM;
@@ -65,21 +66,21 @@ module datapath(
         .d0(pcnextbrF), .d1({pcplus4D[31:28], instrD[25:0], 2'b00}), .s(jumpD), .y(pcnextF)
     );
     
-    // PC Register (stalls on Load-Use)
+    // PC Register (stalls on Load-Use OR Memory Stall)
     flopenr #(32) pcreg (
-        .clk(clk), .reset(reset), .en(~stallF), .d(pcnextF), .q(pcF)
+        .clk(clk), .reset(reset), .en(~stallF & ~mem_stall), .d(pcnextF), .q(pcF)
     );
     adder pcadd1 (
         .a(pcF), .b(32'h4), .y(pcplus4F)
     );
 
     // --- IF/ID Pipeline Register ---
-    // Clears on branch/jump, stalls on Load-Use
+    // Clears on branch/jump, stalls on Load-Use OR Memory Stall
     flopenrc #(32) r1D (
-        .clk(clk), .reset(reset), .en(~stallD), .clear(pcsrcD | jumpD), .d(instrF), .q(instrD)
+        .clk(clk), .reset(reset), .en(~stallD & ~mem_stall), .clear(pcsrcD | jumpD), .d(instrF), .q(instrD)
     );
     flopenrc #(32) r2D (
-        .clk(clk), .reset(reset), .en(~stallD), .clear(pcsrcD | jumpD), .d(pcplus4F), .q(pcplus4D)
+        .clk(clk), .reset(reset), .en(~stallD & ~mem_stall), .clear(pcsrcD | jumpD), .d(pcplus4F), .q(pcplus4D)
     );
 
     // --- ID Stage ---
@@ -104,12 +105,13 @@ module datapath(
     assign equalD = (eqcmpaD == eqcmpbD);
 
     // --- ID/EX Pipeline Register ---
-    floprc #(32) r1E (.clk(clk), .reset(reset), .clear(flushE), .d(rd1D), .q(rd1E));
-    floprc #(32) r2E (.clk(clk), .reset(reset), .clear(flushE), .d(rd2D), .q(rd2E));
-    floprc #(32) r3E (.clk(clk), .reset(reset), .clear(flushE), .d(signimmD), .q(signimmE));
-    floprc #(5)  r4E (.clk(clk), .reset(reset), .clear(flushE), .d(rsD), .q(rsE));
-    floprc #(5)  r5E (.clk(clk), .reset(reset), .clear(flushE), .d(rtD), .q(rtE));
-    floprc #(5)  r6E (.clk(clk), .reset(reset), .clear(flushE), .d(rdD), .q(rdE));
+    // Now uses flopenrc to freeze during memory stall
+    flopenrc #(32) r1E (.clk(clk), .reset(reset), .en(~mem_stall), .clear(flushE), .d(rd1D), .q(rd1E));
+    flopenrc #(32) r2E (.clk(clk), .reset(reset), .en(~mem_stall), .clear(flushE), .d(rd2D), .q(rd2E));
+    flopenrc #(32) r3E (.clk(clk), .reset(reset), .en(~mem_stall), .clear(flushE), .d(signimmD), .q(signimmE));
+    flopenrc #(5)  r4E (.clk(clk), .reset(reset), .en(~mem_stall), .clear(flushE), .d(rsD), .q(rsE));
+    flopenrc #(5)  r5E (.clk(clk), .reset(reset), .en(~mem_stall), .clear(flushE), .d(rtD), .q(rtE));
+    flopenrc #(5)  r6E (.clk(clk), .reset(reset), .en(~mem_stall), .clear(flushE), .d(rdD), .q(rdE));
 
     // --- EX Stage ---
     mux3 #(32) amuxE (.d0(rd1E), .d1(resultW), .d2(aluoutM), .s(forwardaE), .y(srcaE));
@@ -123,17 +125,17 @@ module datapath(
     );
 
     // --- EX/MEM Pipeline Register ---
-    floprc #(32) r1M (.clk(clk), .reset(reset), .clear(1'b0), .d(aluoutE), .q(aluoutM));
-    floprc #(32) r2M (.clk(clk), .reset(reset), .clear(1'b0), .d(writedataE), .q(writedataM));
-    floprc #(5)  r3M (.clk(clk), .reset(reset), .clear(1'b0), .d(writeregE), .q(writeregM));
+    flopenrc #(32) r1M (.clk(clk), .reset(reset), .en(~mem_stall), .clear(1'b0), .d(aluoutE), .q(aluoutM));
+    flopenrc #(32) r2M (.clk(clk), .reset(reset), .en(~mem_stall), .clear(1'b0), .d(writedataE), .q(writedataM));
+    flopenrc #(5)  r3M (.clk(clk), .reset(reset), .en(~mem_stall), .clear(1'b0), .d(writeregE), .q(writeregM));
 
     // --- MEM Stage ---
     // (Memory interaction happens outside in computer.sv)
 
     // --- MEM/WB Pipeline Register ---
-    floprc #(32) r1W (.clk(clk), .reset(reset), .clear(1'b0), .d(aluoutM), .q(aluoutW));
-    floprc #(32) r2W (.clk(clk), .reset(reset), .clear(1'b0), .d(readdataM), .q(readdataW));
-    floprc #(5)  r3W (.clk(clk), .reset(reset), .clear(1'b0), .d(writeregM), .q(writeregW));
+    flopenrc #(32) r1W (.clk(clk), .reset(reset), .en(~mem_stall), .clear(1'b0), .d(aluoutM), .q(aluoutW));
+    flopenrc #(32) r2W (.clk(clk), .reset(reset), .en(~mem_stall), .clear(1'b0), .d(readdataM), .q(readdataW));
+    flopenrc #(5)  r3W (.clk(clk), .reset(reset), .en(~mem_stall), .clear(1'b0), .d(writeregM), .q(writeregW));
 
     // --- WB Stage ---
     mux2 #(32) resmuxW (.d0(aluoutW), .d1(readdataW), .s(memtoregW), .y(resultW));

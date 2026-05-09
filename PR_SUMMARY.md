@@ -1,17 +1,17 @@
-# PR Summary: Epic 4 - 5-Stage Pipelined Architecture
+# PR Summary: Epic 5 - L1 Cache & System Integration
 
 ## Objective
-Upgrade the MIPS CPU to a high-performance 5-Stage Pipelined Architecture. This involves dividing the datapath into `Fetch`, `Decode`, `Execute`, `Memory`, and `Writeback` stages, allowing 5 instructions to execute simultaneously. We will also implement a Hazard Unit to resolve Data and Control hazards.
+Introduce realistic memory latency and demonstrate the performance impact of a Direct-Mapped L1 Cache. We will first establish a baseline using a slow `main_memory.sv`, then build `l1_cache.sv` to exploit spatial and temporal locality, significantly reducing the CPI (Cycles Per Instruction) of the `cache_test.asm` program.
 
 ## Work Completed
-- **`src/pipelined_computer/floprc.sv` & `flopenrc.sv`**: Implemented pipeline boundary registers. These flip-flops support synchronous clearing (to flush instructions like a branch penalty) and synchronous enabling (to stall instructions like a load-use penalty).
-- **`src/pipelined_computer/hazard.sv`**: Implemented the Hazard Detection and Forwarding Unit. 
-  - Solves Read-After-Write (RAW) data hazards by forwarding `ALUOut` from the Memory/Writeback stages back to the Execute stage (`forwardaE`, `forwardbE`).
-  - Solves Load-Use hazards by detecting a read dependency on an executing `lw` instruction and emitting `stallF`, `stallD`, and `flushE`.
-  - Tested rigorously with `tb_hazard.sv`.
+- **`scripts/assembler.py`**: Created a robust, bespoke Python MIPS assembler to easily compile test programs.
+- **`programs/cache_test.asm`**: Authored an array summation program specifically designed to generate cache compulsory misses during initialization, followed by 100% hits during the summation loop. Assembled to `memfile_cache.dat`.
+- **Baseline Architecture Setup**: Upgraded the Pipelined Datapath boundary registers to `flopenrc.sv` to support global memory stalls (`mem_stall`). Fixed a critical hazard unit bug where pipeline stalls cleared register state unintentionally.
+- **`main_memory.sv`**: Implemented with a simulated 5-cycle read/write latency.
+- **Baseline Profiling**: Ran the "No Cache" baseline test. Executing the 184 dynamic instructions required **369 clock cycles**, yielding a baseline CPI of **2.00**.
+- **`l1_cache.sv`**: Built a 64-byte Direct-Mapped Cache with 16-byte (4-word) blocks, utilizing a Write-Through, No-Write-Allocate policy.
+- **Cache Profiling**: Re-ran the simulation using the L1 Cache. 12 out of 16 memory reads resulted in Cache Hits. The execution time dropped to **325 clock cycles**, yielding a cached CPI of **1.76** (a 12% absolute performance increase), exactly matching mathematical predictions.
+- **`STUDENT_GUIDE.md`**: Documented Steps 19, 20, and 21, explaining Memory Hierarchy, global pipeline stalling, address splitting (Tag/Index/Offset), Cache Hit/Miss logic, and the final CPI calculations.
 
 ## Pending in this Epic
-- Separate Instruction and Data Memory (reverting to Harvard architecture for pipeline throughput).
-- Build the Pipelined Datapath (`datapath.sv`).
-- Build the Pipelined CPU wrapper (`cpu.sv`).
-- Test the pipeline with `mipstest.asm`, verifying correct behavior through RAW hazards, Load-Use stalls, and Branch flushes.
+- None. Ready for review and merge.

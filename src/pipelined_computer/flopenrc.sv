@@ -9,8 +9,10 @@ module flopenrc #(parameter WIDTH = 8) (
 
     always_ff @(posedge clk or posedge reset) begin
         if      (reset) q <= 0;
-        else if (clear) q <= 0;
-        else if (en)    q <= d;
+        else if (en) begin
+            if (clear) q <= 0;
+            else       q <= d;
+        end
     end
 
 endmodule

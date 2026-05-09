@@ -165,4 +165,49 @@ Sometimes, forwarding isn't enough.
 *   **The Branch Hazard:** If instruction 1 is a `beq` (branch), we won't know if we are jumping until the Decode or Execute stage! But by then, we've already fetched the wrong instructions! 
 *   **The Architect's Task:** If a branch is taken, the Hazard Unit must assert the `Clear` signal on the Pipeline Registers, wiping out the mistakenly fetched instructions. This is called a **Flush**.
 
+---# Epic 5: Cache Memory & System Integration
+
+Welcome to Phase 4. We have a highly optimized 5-Stage Pipelined CPU executing one instruction per clock cycle. However, this assumes our Data Memory is magically instantaneous. In reality, Main Memory (RAM) is extremely slow—taking 10 to 100 clock cycles to respond. If we hook our CPU directly to slow RAM, the pipeline will stall on *every* `lw` and `sw`, destroying our performance!
+
+To solve this, we introduce the **Memory Hierarchy** and the **L1 Cache**.
+
+### Step 19: The Performance Baseline (No Cache)
+First, we must understand the problem.
+*   **The Architect's Task:** We will replace our instantaneous `dmem.sv` with `main_memory.sv`, which simulates a 5-cycle read/write latency using a simple state machine and handshake signals (`mem_valid`, `mem_ready`).
+*   **Global Stalls:** We must modify our Pipeline Control. If `mem_ready` is 0 during a Memory stage access, the *entire* pipeline must freeze. 
+*   **Testing:** We wrote an assembly program `programs/cache_test.asm` that loops through an array, storing 16 values, then loops through again to sum them. If we run this on the "No Cache" baseline, every memory access forces a 5-cycle stall, resulting in terrible performance.
+
+### Step 20: The L1 Direct-Mapped Cache
+We will build a small, blindingly fast memory that sits exactly between the CPU and Main Memory.
+*   **Locality:** Caches work because of *Temporal Locality* (if you use data, you'll likely use it again soon) and *Spatial Locality* (if you use data, you'll likely use the data next to it).
+*   **The Architect's Task:** Build `l1_cache.sv`.
+    *   **Structure:** We will build a Direct-Mapped Cache. Each cache line (block) will hold 4 words. 
+    *   **Address Splitting:** The 32-bit physical address from the CPU is split into three parts: `Tag`, `Index` (which line in the cache), and `Offset` (which word in the line).
+*   **Cache Controller (`cache_controller.sv`):** 
+    *   When the CPU requests an address, the controller checks if the `Tag` matches and the `Valid` bit is 1. If yes: **CACHE HIT!** The data is returned in 1 cycle.
+    *   If no: **CACHE MISS!** The controller asserts `cpu_stall`, requests the entire 4-word block from Main Memory (taking many cycles), writes it into the cache line, and then drops the stall so the CPU can finally read the word.
+
+```mermaid
+graph TD
+    CPU[Pipelined CPU]
+    L1[L1 Data Cache<br/>1 cycle latency]
+    RAM[Main Memory<br/>5 cycle latency]
+    
+    CPU <-->|Address / Data / Hit| L1
+    L1 <-->|Block Transfer / Miss Penalty| RAM
+```
+
+By running `cache_test.asm` *with* the cache, we will see Compulsory Misses during the first loop, but **100% Cache Hits** during the second loop, drastically reducing the total cycle count!
+
+---
+### Step 21: Quantifying the Cache Advantage
+As an architect, your design decisions must be backed by data. We ran our array summation program (`cache_test.asm`) through both configurations.
+*   **The Baseline (No Cache):** The program executed 184 dynamic instructions. Because every one of the 33 memory accesses incurred a 4-cycle stall penalty, the total execution time was **369 cycles**. This gives us a baseline CPI of **2.00**.
+*   **The L1 Cache Configuration:** We introduced a 64-byte Direct-Mapped Cache with 16-byte blocks. By loading 4 words at a time, we leveraged spatial locality. The program executed the same 184 instructions, but the execution time plummeted to **325 cycles**.
+*   **The Math:** Why exactly 325 cycles? 
+    *   12 of the 16 array loads became **Cache Hits** (0 stall cycles), saving us 48 stall cycles.
+    *   The 4 **Compulsory Misses** triggered our Cache Controller FSM, adding a slight overhead of 1 extra cycle per miss (-4 cycles).
+    *   369 baseline - 48 saved + 4 overhead = **325 cycles**. 
+    *   Our CPI dropped from 2.00 to **1.76**, a 12% performance increase from a trivially simple Cache implementation!
+
 ---
