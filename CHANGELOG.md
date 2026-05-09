@@ -2,7 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased] - Phase 1 Memory Integration
+## [Unreleased] - Phase 2 Multi-Cycle Datapath
+### Added
+- *Pending*
+
+## [Released] - Phase 1 Memory Integration
 ### Added
 - `dff.sv`: Program Counter state register.
 - `imem.sv`: Instruction Memory (ROM) initialized via `$readmemh`.

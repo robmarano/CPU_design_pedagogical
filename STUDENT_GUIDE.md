@@ -94,4 +94,27 @@ Finally, we put the processor in the motherboard.
     2.  **`computer.sv`:** Instantiate the CPU, the Instruction Memory, and the Data Memory. Wire the CPU's PC to the Instruction Memory, and the CPU's ALU Result to the Data Memory's Address port. 
 *   **The Final Test:** Once this is done, our machine will finally run real software!
 
+---# Epic 3: The Multi-Cycle Architecture
+
+Welcome to Phase 2. We have successfully built a Single-Cycle CPU. It is simple and easy to understand, but it has two massive flaws:
+1. **The Clock is Too Slow:** The clock cycle must be long enough for the slowest instruction (like `lw`) to travel through the entire chip (IMEM -> Register File -> ALU -> DMEM -> Register File). Fast instructions (like `add`) waste time waiting for the clock to tick.
+2. **Wasted Hardware:** Because everything happens in one tick, we cannot reuse hardware. We had to build two separate memories (Instruction and Data) and multiple adders (for PC + 4 and Branching).
+
+To solve this, we move to a **Multi-Cycle Architecture**.
+
+### Step 12: The Von Neumann Shift
+Instead of doing everything at once, we break instructions down into 3 to 5 smaller steps. We will execute one step per clock cycle. 
+*   **The Architect's Task:** 
+    *   **Unified Memory:** Since we fetch the instruction in Step 1 and read data in Step 4, we no longer need separate memories! We will combine `imem` and `dmem` into a single `mem.sv`.
+    *   **Shared ALU:** We can use the main ALU to calculate `PC + 4` in Step 1, and do mathematical operations in Step 3. We no longer need separate adders.
+    *   **State Registers:** Because an instruction takes multiple cycles, we need "save points" between steps. We must build non-architectural state registers (Instruction Register `IR`, Memory Data Register `MDR`, `A`, `B`, and `ALUOut`).
+
+### Step 13: The Finite State Machine (FSM)
+In the Single-Cycle CPU, the Main Decoder was a simple combinational translator. In the Multi-Cycle CPU, the Control Unit must be a **Finite State Machine**.
+*   **The Architect's Task:** Build `controller.sv`.
+    *   It will have a `state` variable (e.g., FETCH, DECODE, EXECUTE, MEM_WRITE, WRITEBACK).
+    *   On every clock tick, it moves to the next logical state.
+    *   The control signals (`ALUSrcA`, `ALUSrcB`, `MemWrite`, etc.) will change depending on *both* the current instruction opcode AND the current state of the FSM. 
+    *   This is the most complex control logic you will build. You must carefully map the state transitions exactly as shown in the Harris & Harris state diagram.
+
 ---
