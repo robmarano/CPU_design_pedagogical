@@ -2,7 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased] - Phase 1 Memory Integration
+## [Unreleased] - Phase 2 Multi-Cycle Datapath
+### Added
+- `mainfsm.sv`: Multi-cycle Finite State Machine.
+- `controller.sv`: Multi-cycle Control Unit wrapper.
+- `tb_controller.sv`: Testbench for cycle-by-cycle control signal validation.
+- `STUDENT_GUIDE.md`: Added Step 14 for FSM design.
+
+## [Released] - Phase 1 Memory Integration
 ### Added
 - `dff.sv`: Program Counter state register.
 - `imem.sv`: Instruction Memory (ROM) initialized via `$readmemh`.

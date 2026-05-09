@@ -94,4 +94,46 @@ Finally, we put the processor in the motherboard.
     2.  **`computer.sv`:** Instantiate the CPU, the Instruction Memory, and the Data Memory. Wire the CPU's PC to the Instruction Memory, and the CPU's ALU Result to the Data Memory's Address port. 
 *   **The Final Test:** Once this is done, our machine will finally run real software!
 
+---# Epic 3: The Multi-Cycle Architecture
+
+Welcome to Phase 2. We have successfully built a Single-Cycle CPU. It is simple and easy to understand, but it has two massive flaws:
+1. **The Clock is Too Slow:** The clock cycle must be long enough for the slowest instruction (like `lw`) to travel through the entire chip (IMEM -> Register File -> ALU -> DMEM -> Register File). Fast instructions (like `add`) waste time waiting for the clock to tick.
+2. **Wasted Hardware:** Because everything happens in one tick, we cannot reuse hardware. We had to build two separate memories (Instruction and Data) and multiple adders (for PC + 4 and Branching).
+
+To solve this, we move to a **Multi-Cycle Architecture**.
+
+### Step 12: The Von Neumann Shift
+Instead of doing everything at once, we break instructions down into 3 to 5 smaller steps. We will execute one step per clock cycle. 
+*   **The Architect's Task:** 
+    *   **Unified Memory:** Since we fetch the instruction in Step 1 and read data in Step 4, we no longer need separate memories! We will combine `imem` and `dmem` into a single `mem.sv`.
+    *   **Shared ALU:** We can use the main ALU to calculate `PC + 4` in Step 1, and do mathematical operations in Step 3. We no longer need separate adders.
+    *   **State Registers:** Because an instruction takes multiple cycles, we need "save points" between steps. We must build non-architectural state registers (Instruction Register `IR`, Memory Data Register `MDR`, `A`, `B`, and `ALUOut`).
+
+### Step 13: The Finite State Machine (FSM)
+In the Single-Cycle CPU, the Main Decoder was a simple combinational translator. In the Multi-Cycle CPU, the Control Unit must be a **Finite State Machine**.
+*   **The Architect's Task:** Build `controller.sv`.
+    *   It will have a `state` variable (e.g., FETCH, DECODE, EXECUTE, MEM_WRITE, WRITEBACK).
+    *   On every clock tick, it moves to the next logical state.
+    *   The control signals (`ALUSrcA`, `ALUSrcB`, `MemWrite`, etc.) will change depending on *both* the current instruction opcode AND the current state of the FSM. 
+    *   This is the most complex control logic you will build. You must carefully map the state transitions exactly as shown in the Harris & Harris state diagram.
+
+### Step 14: Implementing the Controller (`controller.sv` and `mainfsm.sv`)
+To keep our code organized, we split the FSM into two parts: the overall `controller` (which also handles ALU decoding, just like in the Single-Cycle) and the `mainfsm` (which handles the state transitions).
+*   **The Architect's Task:**
+    1.  **State Definition:** In SystemVerilog, we use `typedef enum logic [3:0]` to explicitly name our states (e.g., `FETCH`, `DECODE`, `MEMADR`). This makes the code highly readable and prevents "magic number" errors.
+    2.  **Next State Logic:** We use an `always_comb` block to look at our `state` and the instruction `op` to determine what the `nextstate` should be. (e.g., if we are in `DECODE` and the opcode is `lw`, the next state is `MEMADR`).
+    3.  **State Memory:** A simple `always_ff @(posedge clk)` block updates `state <= nextstate`.
+    4.  **Output Logic:** Another `always_comb` block looks at the current `state` and sets all the control wires (like `IRWrite` to save the instruction, or setting `ALUSrcB` to `2'b01` to add 4 to the PC during `FETCH`).
+
+### Step 15: Wiring the Multi-Cycle Datapath (`datapath.sv`)
+Now we assemble the physical components. Because we are reusing the ALU and Memory across different clock cycles, our plumbing requires more multiplexers and state registers.
+*   **The Architect's Task:**
+    1.  **Shared Memory:** Notice we only instantiate one `mem.sv`. We use a multiplexer (`IorD`) to choose whether the memory address comes from the `PC` (during FETCH) or `ALUOut` (during Data Memory Access).
+    2.  **State Registers:** Since data arrives at different times, we must catch it and hold it.
+        *   When we read an instruction from memory, we catch it in the `IR` (Instruction Register). It only updates when `IRWrite` is high.
+        *   When we read data from memory, we catch it in the `MDR` (Memory Data Register).
+        *   When we read from the Register File, we catch the two values in registers `A` and `B`.
+        *   When the ALU calculates a result, we catch it in `ALUOut`.
+    3.  **Shared ALU:** The ALU is now the hardest working component. During FETCH, we use it to add `PC + 4`. During DECODE, we use it to calculate the branch target address. During EXECUTE, we finally do the math requested by the instruction. We route the correct inputs to the ALU using large `mux4` (4-to-1) multiplexers, controlled by `ALUSrcA` and `ALUSrcB`.
+
 ---
