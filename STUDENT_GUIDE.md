@@ -165,4 +165,38 @@ Sometimes, forwarding isn't enough.
 *   **The Branch Hazard:** If instruction 1 is a `beq` (branch), we won't know if we are jumping until the Decode or Execute stage! But by then, we've already fetched the wrong instructions! 
 *   **The Architect's Task:** If a branch is taken, the Hazard Unit must assert the `Clear` signal on the Pipeline Registers, wiping out the mistakenly fetched instructions. This is called a **Flush**.
 
+---# Epic 5: Cache Memory & System Integration
+
+Welcome to Phase 4. We have a highly optimized 5-Stage Pipelined CPU executing one instruction per clock cycle. However, this assumes our Data Memory is magically instantaneous. In reality, Main Memory (RAM) is extremely slow—taking 10 to 100 clock cycles to respond. If we hook our CPU directly to slow RAM, the pipeline will stall on *every* `lw` and `sw`, destroying our performance!
+
+To solve this, we introduce the **Memory Hierarchy** and the **L1 Cache**.
+
+### Step 19: The Performance Baseline (No Cache)
+First, we must understand the problem.
+*   **The Architect's Task:** We will replace our instantaneous `dmem.sv` with `main_memory.sv`, which simulates a 5-cycle read/write latency using a simple state machine and handshake signals (`mem_valid`, `mem_ready`).
+*   **Global Stalls:** We must modify our Pipeline Control. If `mem_ready` is 0 during a Memory stage access, the *entire* pipeline must freeze. 
+*   **Testing:** We wrote an assembly program `programs/cache_test.asm` that loops through an array, storing 16 values, then loops through again to sum them. If we run this on the "No Cache" baseline, every memory access forces a 5-cycle stall, resulting in terrible performance.
+
+### Step 20: The L1 Direct-Mapped Cache
+We will build a small, blindingly fast memory that sits exactly between the CPU and Main Memory.
+*   **Locality:** Caches work because of *Temporal Locality* (if you use data, you'll likely use it again soon) and *Spatial Locality* (if you use data, you'll likely use the data next to it).
+*   **The Architect's Task:** Build `l1_cache.sv`.
+    *   **Structure:** We will build a Direct-Mapped Cache. Each cache line (block) will hold 4 words. 
+    *   **Address Splitting:** The 32-bit physical address from the CPU is split into three parts: `Tag`, `Index` (which line in the cache), and `Offset` (which word in the line).
+*   **Cache Controller (`cache_controller.sv`):** 
+    *   When the CPU requests an address, the controller checks if the `Tag` matches and the `Valid` bit is 1. If yes: **CACHE HIT!** The data is returned in 1 cycle.
+    *   If no: **CACHE MISS!** The controller asserts `cpu_stall`, requests the entire 4-word block from Main Memory (taking many cycles), writes it into the cache line, and then drops the stall so the CPU can finally read the word.
+
+```mermaid
+graph TD
+    CPU[Pipelined CPU]
+    L1[L1 Data Cache<br/>1 cycle latency]
+    RAM[Main Memory<br/>5 cycle latency]
+    
+    CPU <-->|Address / Data / Hit| L1
+    L1 <-->|Block Transfer / Miss Penalty| RAM
+```
+
+By running `cache_test.asm` *with* the cache, we will see Compulsory Misses during the first loop, but **100% Cache Hits** during the second loop, drastically reducing the total cycle count!
+
 ---
