@@ -9,7 +9,7 @@ module aludec(
     always_comb begin
         case(aluop)
             2'b00: alucontrol = 4'b0010;  // add (for lw/sw/addi)
-            2'b01: alucontrol = 4'b0110;  // sub (for beq)
+            2'b01: alucontrol = 4'b0110;  // sub (for beq/bne)
             2'b10: case(funct)          // R-type instructions
                 6'b100000: alucontrol = 4'b0010; // add
                 6'b100010: alucontrol = 4'b0110; // sub
@@ -23,7 +23,7 @@ module aludec(
                 6'b010010: alucontrol = 4'b0100; // mflo
                 default:   alucontrol = 4'bxxxx; // ???
             endcase
-            default: alucontrol = 4'bxxxx;
+            default: alucontrol = 4'b0010; // default to add
         endcase
     end
 

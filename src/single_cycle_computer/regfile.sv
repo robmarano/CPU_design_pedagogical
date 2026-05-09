@@ -9,6 +9,14 @@ module regfile(
 );
 
     logic [31:0] rf[31:0];
+    
+    // Initialize registers to zero to prevent X propagation
+    integer i;
+    initial begin
+        for (i = 0; i < 32; i = i + 1) begin
+            rf[i] = 32'b0;
+        end
+    end
 
     // Three-port register file
     // Read two ports combinationally (A1/RD1, A2/RD2)
@@ -16,7 +24,7 @@ module regfile(
     // Register 0 hardwired to 0
 
     always_ff @(posedge clk) begin
-        if (we3) rf[wa3] <= wd3;
+        if (we3 && wa3 != 0) rf[wa3] <= wd3;
     end
 
     assign rd1 = (ra1 != 0) ? rf[ra1] : 32'b0;

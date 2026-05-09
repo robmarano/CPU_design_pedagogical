@@ -11,8 +11,8 @@ This file serves as a reminder for architectural components that have yet to be 
 - [x] **Instruction Memory** (`imem.sv`): ROM simulation.
 - [x] **Data Memory** (`dmem.sv`): RAM simulation.
 - [x] **Datapath Wrapper** (`datapath.sv`): Structural wiring of all single-cycle components.
-- [ ] **CPU Wrapper** (`cpu.sv`): Combines Control Unit (`maindec` + `aludec`) with the Datapath.
-- [ ] **Top-Level Computer** (`computer.sv`): Encapsulation of CPU and memories.
+- [x] **CPU Wrapper** (`cpu.sv`): Combines Control Unit (`maindec` + `aludec`) with the Datapath.
+- [x] **Top-Level Computer** (`computer.sv`): Encapsulation of CPU and memories.
 
 ## Phase 2: Multi-Cycle Datapath
 - [ ] FSM Control Logic
