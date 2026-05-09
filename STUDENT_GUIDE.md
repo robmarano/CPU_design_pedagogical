@@ -117,4 +117,12 @@ In the Single-Cycle CPU, the Main Decoder was a simple combinational translator.
     *   The control signals (`ALUSrcA`, `ALUSrcB`, `MemWrite`, etc.) will change depending on *both* the current instruction opcode AND the current state of the FSM. 
     *   This is the most complex control logic you will build. You must carefully map the state transitions exactly as shown in the Harris & Harris state diagram.
 
+### Step 14: Implementing the Controller (`controller.sv` and `mainfsm.sv`)
+To keep our code organized, we split the FSM into two parts: the overall `controller` (which also handles ALU decoding, just like in the Single-Cycle) and the `mainfsm` (which handles the state transitions).
+*   **The Architect's Task:**
+    1.  **State Definition:** In SystemVerilog, we use `typedef enum logic [3:0]` to explicitly name our states (e.g., `FETCH`, `DECODE`, `MEMADR`). This makes the code highly readable and prevents "magic number" errors.
+    2.  **Next State Logic:** We use an `always_comb` block to look at our `state` and the instruction `op` to determine what the `nextstate` should be. (e.g., if we are in `DECODE` and the opcode is `lw`, the next state is `MEMADR`).
+    3.  **State Memory:** A simple `always_ff @(posedge clk)` block updates `state <= nextstate`.
+    4.  **Output Logic:** Another `always_comb` block looks at the current `state` and sets all the control wires (like `IRWrite` to save the instruction, or setting `ALUSrcB` to `2'b01` to add 4 to the PC during `FETCH`).
+
 ---
