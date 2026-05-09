@@ -15,9 +15,10 @@ This file serves as a reminder for architectural components that have yet to be 
 - [x] **Top-Level Computer** (`computer.sv`): Encapsulation of CPU and memories.
 
 ## Phase 2: Multi-Cycle Datapath
-- [ ] FSM Control Logic
-- [ ] Unified Memory integration
-- [ ] State registers (IR, MDR, A, B, ALUOut)
+- [x] FSM Control Logic (`controller.sv` / `mainfsm.sv`)
+- [x] Unified Memory integration (`mem.sv`)
+- [x] State registers (IR, MDR, A, B, ALUOut) (`flopenr.sv` / `flopr.sv`)
+- [x] Top-Level Integrations (`datapath.sv`, `cpu.sv`, `computer.sv`)
 
 ## Phase 3: Pipelined Datapath
 - [ ] Pipeline boundary registers (IF/ID, ID/EX, EX/MEM, MEM/WB)
