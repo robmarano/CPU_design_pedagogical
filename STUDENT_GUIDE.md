@@ -136,4 +136,33 @@ Now we assemble the physical components. Because we are reusing the ALU and Memo
         *   When the ALU calculates a result, we catch it in `ALUOut`.
     3.  **Shared ALU:** The ALU is now the hardest working component. During FETCH, we use it to add `PC + 4`. During DECODE, we use it to calculate the branch target address. During EXECUTE, we finally do the math requested by the instruction. We route the correct inputs to the ALU using large `mux4` (4-to-1) multiplexers, controlled by `ALUSrcA` and `ALUSrcB`.
 
+---# Epic 4: The 5-Stage Pipelined Architecture
+
+Welcome to Phase 3. The Multi-Cycle CPU solved our hardware duplication problem, but it is still slow: it executes one instruction every 3 to 5 clock cycles (CPI > 1). 
+
+Modern processors use an **Assembly Line** technique called **Pipelining**. Instead of waiting for a car to be fully built before starting the next one, we move the car down the line. We divide the CPU into 5 distinct stages:
+1. **Instruction Fetch (IF)**
+2. **Instruction Decode (ID)**
+3. **Execute (EX)**
+4. **Memory Access (MEM)**
+5. **Writeback (WB)**
+
+With this design, we can finish 1 instruction every single clock cycle (CPI = 1)! But it introduces incredibly complex traffic jams known as **Hazards**.
+
+### Step 16: Pipeline Registers
+To keep the instructions from crashing into each other, we must put walls between the stages.
+*   **The Architect's Task:** We will build Pipeline Boundary Registers (`IF/ID`, `ID/EX`, `EX/MEM`, `MEM/WB`). These are massive flip-flops that hold not just the data, but *all the control signals* for that specific instruction. As the instruction moves down the pipeline, its control signals ride alongside it.
+*   **Clear and Enable:** We will need special flip-flops (`flopenrc.sv`) that have both an `Enable` (to pause or stall the pipeline) and a `Clear` (to flush the pipeline).
+
+### Step 17: Data Hazards and Forwarding (Bypassing)
+What happens if instruction 1 calculates `$t0`, and instruction 2 immediately tries to read `$t0`? Instruction 1 hasn't reached the Writeback stage yet! This is a **Read-After-Write (RAW) Data Hazard**.
+*   **The Architect's Task:** We cannot afford to wait. We must build a **Hazard Unit**. 
+*   **Forwarding Logic:** The Hazard Unit will look ahead. If it sees that the EX stage needs a register that the MEM or WB stage is currently holding, it will trigger a Multiplexer to "time travel" the data backward. This is called **Bypassing** or **Forwarding**.
+
+### Step 18: Control Hazards, Stalls, and Flushes
+Sometimes, forwarding isn't enough.
+*   **The Load-Use Hazard:** If instruction 1 is `lw $t0` and instruction 2 needs `$t0`, the data doesn't exist until the end of the MEM stage. We *must* pause the pipeline. The Hazard Unit will freeze the PC and IF/ID registers, injecting a "bubble" (a `NOP` instruction) into the EX stage. This is called a **Stall**.
+*   **The Branch Hazard:** If instruction 1 is a `beq` (branch), we won't know if we are jumping until the Decode or Execute stage! But by then, we've already fetched the wrong instructions! 
+*   **The Architect's Task:** If a branch is taken, the Hazard Unit must assert the `Clear` signal on the Pipeline Registers, wiping out the mistakenly fetched instructions. This is called a **Flush**.
+
 ---

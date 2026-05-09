@@ -1,16 +1,15 @@
-# PR Summary: Epic 3 - Multi-Cycle Architecture
+# PR Summary: Epic 4 - 5-Stage Pipelined Architecture
 
 ## Objective
-Evolve the MIPS32 CPU from a Single-Cycle (Harvard) design to a Multi-Cycle (Von Neumann) design. This involves introducing a Finite State Machine (FSM) to control execution across multiple clock cycles, allowing the sharing of the ALU and a single Unified Memory.
+Upgrade the MIPS CPU to a high-performance 5-Stage Pipelined Architecture. This involves dividing the datapath into `Fetch`, `Decode`, `Execute`, `Memory`, and `Writeback` stages, allowing 5 instructions to execute simultaneously. We will also implement a Hazard Unit to resolve Data and Control hazards.
 
 ## Work Completed
-- **`src/multi_cycle_computer/flopenr.sv` & `flopr.sv`**: Implemented state registers.
-- **`src/multi_cycle_computer/mem.sv`**: Implemented Unified Memory. 
-- **`src/multi_cycle_computer/mainfsm.sv`**: Implemented the core FSM state transitions and output control signals.
-- **`src/multi_cycle_computer/controller.sv`**: Built the multi-cycle controller wrapper.
-- **`src/multi_cycle_computer/datapath.sv`**: Successfully wired the Multi-Cycle datapath. It instantiates exactly ONE ALU and ONE Memory module, reusing them across cycles using large 4-to-1 multiplexers (`mux4.sv`). Added critical state registers (`IR`, `MDR`, `A`, `B`, `ALUOut`).
-- **`src/multi_cycle_computer/cpu.sv` & `computer.sv`**: Completed the top-level wrappers for the multi-cycle CPU.
-- **`tests/multi_cycle_computer/tb_computer.sv`**: Ran the system-level integration test against the `mipstest.asm` memory file. **Simulation Succeeded**, writing `7` to address `84` exactly as the Harris & Harris specification requires!
+- *Pending implementation*
 
 ## Pending in this Epic
-- Phase 2 (Multi-Cycle Architecture) is now 100% complete and fully verified. Ready to merge into `main` and begin Epic 4 (Pipelined Datapath).
+- Implement Pipeline Registers (`flopenr.sv`, `flopenrc.sv`, `floprc.sv` with clear/flush logic).
+- Implement the **Hazard Unit** (`hazard.sv`) to control forwarding, stalls, and flushes.
+- Separate Instruction and Data Memory (reverting to Harvard architecture for pipeline throughput).
+- Build the Pipelined Datapath (`datapath.sv`).
+- Build the Pipelined CPU wrapper (`cpu.sv`).
+- Test the pipeline with `mipstest.asm`, verifying correct behavior through RAW hazards, Load-Use stalls, and Branch flushes.
