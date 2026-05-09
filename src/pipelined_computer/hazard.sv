@@ -6,7 +6,7 @@ module hazard(
     input  logic [4:0] writeregE, writeregM, writeregW,
     input  logic       regwriteE, regwriteM, regwriteW,
     input  logic       memtoregE, memtoregM,
-    input  logic       branchD,
+    input  logic       branchD, pcsrcD,
     
     output logic       forwardaD, forwardbD,
     output logic [1:0] forwardaE, forwardbE,
@@ -35,6 +35,14 @@ module hazard(
     end
 
     // Forwarding to Decode Stage (for Branch Equality Check)
+    // BUG FIX: branch stalling handles dependencies on EX and MEM stages.
+    // If the dependency is in the MEM stage, we still stall until it reaches WB, or we forward from MEM!
+    // Actually, we can forward from MEM if it's an ALU result.
+    // Let's forward from MEM stage if it's an ALU result. If it's a MEM read, it was stalled, so the data is now in WB.
+    // Let's forward from both MEM and WB to ID? No, Harris & Harris only forwards from MEM to ID for branches. Wait, no.
+    // If we only forward from MEM, what if the dependency is in WB?
+    // Let's update forwardaD and forwardbD to just use simple logic: if it's in MEM, forward. If we stall correctly, it won't matter.
+    // Actually, branchstallD handles it.
     assign forwardaD = (rsD != 0) && (rsD == writeregM) && regwriteM;
     assign forwardbD = (rtD != 0) && (rtD == writeregM) && regwriteM;
 
@@ -44,19 +52,15 @@ module hazard(
     
     // Branch Stall: We must stall a branch if it depends on an ALU result currently in EX or a Load currently in MEM
     assign branchstallD = branchD & 
-                          (regwriteE & ((writeregE == rsD) | (writeregE == rtD))) | 
-                          (memtoregM & ((writeregM == rsD) | (writeregM == rtD)));
+                          ((regwriteE & (writeregE == rsD | writeregE == rtD)) | 
+                           (memtoregM & (writeregM == rsD | writeregM == rtD)));
     
     // Aggregate Stalls and Flushes
-    // If we stall DECODE, we must also stall FETCH (so we don't lose the next instruction).
-    // If we stall DECODE, we must FLUSH EXECUTE (insert a bubble) so the stalled instruction doesn't execute twice.
     assign stallD = lwstallD | branchstallD;
     assign stallF = stallD;
-    assign flushE = stallD;
-
-    // Note: 'regwriteE' and 'writeregE' were used in branchstallD but not in module inputs.
-    // In the Harris & Harris pipeline, branch comparisons happen in ID. If the instruction in EX
-    // is writing to a register needed by the branch, we must stall. We need to define those wires internally
-    // or add them as inputs. Let's add them as inputs to match the full design.
+    
+    // BUG FIX: flushE MUST be high on a stall (to insert a bubble) OR when a branch is taken (pcsrcD) 
+    // to flush the instruction that was fetched in the branch delay slot (which is now in ID, moving to EX).
+    assign flushE = stallD | pcsrcD;
 
 endmodule
