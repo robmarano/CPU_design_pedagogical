@@ -2,7 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased] - Phase 2 Multi-Cycle Datapath
+## [Unreleased] - Phase 3 Pipelined Datapath
+### Added
+- *Pending*
+
+## [Released] - Phase 2 Multi-Cycle Datapath
 ### Added
 - `mainfsm.sv`: Multi-cycle Finite State Machine.
 - `controller.sv`: Multi-cycle Control Unit wrapper.
