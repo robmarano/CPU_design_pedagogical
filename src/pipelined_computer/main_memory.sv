@@ -1,22 +1,22 @@
 `timescale 1ns/1ps
 
 module main_memory(
-    input  logic        clk, reset,
-    input  logic        mem_read, mem_write,
-    input  logic [31:0] a, wd,
-    output logic [31:0] rd,
-    output logic        mem_ready
+    input  logic         clk, reset,
+    input  logic         mem_read, mem_write,
+    input  logic [31:0]  a, wd,
+    output logic [31:0]  rd,       // Single word read (for baseline)
+    output logic [127:0] rd_block, // 4-word block read (for L1 cache)
+    output logic         mem_ready
 );
 
     logic [31:0] RAM[0:255]; // 256 words (1024 bytes)
     
-    // Initialize registers to zero to prevent X propagation
     integer i;
     initial begin
         for (i = 0; i < 256; i = i + 1) begin
             RAM[i] = 32'b0;
         end
-        // We do not readmemh. It's written directly by SW INIT.
+        $readmemh("programs/memfile_cache.dat", RAM);
     end
 
     // FSM to simulate 5-cycle memory latency
@@ -38,22 +38,29 @@ module main_memory(
             W1:   nextstate = W2;
             W2:   nextstate = W3;
             W3:   nextstate = W4;
-            W4:   nextstate = IDLE; // mem_ready is high in W4
+            W4:   nextstate = IDLE;
             default: nextstate = IDLE;
         endcase
     end
 
-    // mem_ready is combinational so the CPU captures data on the same clock edge it leaves W4
     assign mem_ready = (state == W4);
 
-    // Synchronous write at the end of the wait period
     always_ff @(posedge clk) begin
         if (state == W4 && mem_write) begin
             RAM[a[31:2]] <= wd;
         end
     end
 
-    // Combinational read
+    // Single word read
     assign rd = RAM[a[31:2]];
+
+    // Combinational block read aligned to 4-word boundaries.
+    wire [31:0] base_addr = {a[31:4], 4'b0000};
+    assign rd_block = {
+        RAM[base_addr[31:2] + 3],
+        RAM[base_addr[31:2] + 2],
+        RAM[base_addr[31:2] + 1],
+        RAM[base_addr[31:2] + 0]
+    };
 
 endmodule
