@@ -13,7 +13,11 @@ def assemble(input_file, output_file):
         'sw':   (0x2b, None, 'I_mem'),
         'beq':  (0x04, None, 'I_br'),
         'bne':  (0x05, None, 'I_br'),
-        'j':    (0x02, None, 'J')
+        'j':    (0x02, None, 'J'),
+        'syscall': (0x00, 0x0c, 'Sys'),
+        'eret': (0x10, 0x18, 'Eret'),
+        'mfc0': (0x10, None, 'C0'),
+        'mtc0': (0x10, None, 'C0')
     }
 
     def reg(s):
@@ -35,6 +39,14 @@ def assemble(input_file, output_file):
     instructions = []
     addr = 0
     for line in lines:
+        if line.startswith('.org'):
+            parts = line.split()
+            target_addr = int(parts[1], 0)
+            while addr < target_addr:
+                instructions.append((addr, 'add zero, zero, zero')) # NOP
+                addr += 4
+            continue
+
         if ':' in line:
             label, rest = line.split(':', 1)
             labels[label.strip()] = addr
@@ -55,46 +67,54 @@ def assemble(input_file, output_file):
             print(f"Error: Unknown instruction {mnem}")
             sys.exit(1)
             
+        # DEBUG
+        if mnem not in opcodes:
+            print(f'Missing: {mnem}')
+            sys.exit(1)
         op, funct, typ = opcodes[mnem]
         
         if typ == 'R':
-            # add rd, rs, rt
+            if len(parts) < 4: print(f'Error on R-type: {inst}'); sys.exit(1)
             rd = reg(parts[1])
             rs = reg(parts[2])
             rt = reg(parts[3])
             code = (op << 26) | (rs << 21) | (rt << 16) | (rd << 11) | (0 << 6) | funct
         elif typ == 'I':
-            # addi rt, rs, imm
             rt = reg(parts[1])
             rs = reg(parts[2])
-            imm = int(parts[3]) & 0xFFFF
+            imm = int(parts[3], 0) & 0xFFFF
             code = (op << 26) | (rs << 21) | (rt << 16) | imm
         elif typ == 'I_mem':
-            # lw rt, imm(rs)
             rt = reg(parts[1])
-            imm = int(parts[2]) & 0xFFFF
+            imm = int(parts[2], 0) & 0xFFFF
             rs = reg(parts[3])
             code = (op << 26) | (rs << 21) | (rt << 16) | imm
         elif typ == 'I_br':
-            # beq rs, rt, label
             rs = reg(parts[1])
             rt = reg(parts[2])
             target = parts[3]
             if target in labels:
-                # offset is relative to PC+4
                 offset = (labels[target] - (addr + 4)) // 4
             else:
-                offset = int(target)
+                offset = int(target, 0)
             offset = offset & 0xFFFF
             code = (op << 26) | (rs << 21) | (rt << 16) | offset
         elif typ == 'J':
-            # j label
             target = parts[1]
             if target in labels:
                 t_addr = labels[target] // 4
             else:
-                t_addr = int(target)
+                t_addr = int(target, 0)
             code = (op << 26) | (t_addr & 0x03FFFFFF)
+        elif typ == 'Sys':
+            code = (op << 26) | funct
+        elif typ == 'Eret':
+            code = (op << 26) | (1 << 25) | funct
+        elif typ == 'C0':
+            rs = 0 if mnem == 'mfc0' else 4
+            rt = reg(parts[1])
+            rd = int(parts[2].replace('$', ''))
+            code = (op << 26) | (rs << 21) | (rt << 16) | (rd << 11)
 
         machine_code.append(f"{code:08x}")
 
