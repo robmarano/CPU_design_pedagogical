@@ -315,3 +315,10 @@ We wrote a C++ program (`src/verilator/sim_main.cpp`) that uses the **SDL2** gra
 
 ### Step 32: Interactive Firmware (`terminal.asm`)
 We wrote an assembly program that enables CP0 interrupts and then goes to sleep. When you type on your physical keyboard, the hardware freezes the sleep loop, jumps to `0x80`, reads your keystroke, echoes it to the screen, and uses `eret` to go right back to sleep!
+
+### Step 33: The Pipeline Bubble Trap (Architectural Edge Case)
+While writing the terminal echo program, we discovered a brilliant edge case! 
+*   **The Scenario:** Our program enters an infinite sleep loop: `sleep: j sleep`. 
+*   **The Architecture:** When the CPU executes a jump (`j`), it realizes it in the Decode (ID) stage. The Datapath must insert a "bubble" (a `NOP`) by flushing the `IF/ID` register while it fetches the new jump target. During this flush, the `pcD` signal becomes `0x00000000`.
+*   **The Bug:** If you press a key on your keyboard, an asynchronous hardware interrupt triggers. If this interrupt aligns *exactly* with the clock cycle where the ID stage holds a bubble, Coprocessor 0 eagerly saves `pcD` (`0x00000000`) into the EPC! When the interrupt handler finishes and calls `eret`, the CPU jumps to `0x00000000` (the start of the program), causing it to restart and print "READY" again.
+*   **The Solution:** We introduced a `validD` flag. The pipeline now tracks if the instruction in the ID stage is real (`validD = 1`) or a bubble (`validD = 0`). If an interrupt strikes during a bubble, CP0 saves `pcF` (the PC of the instruction that is *about* to arrive) instead of `pcD`. This guarantees the CPU resumes perfectly without rebooting!
