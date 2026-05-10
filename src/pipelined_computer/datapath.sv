@@ -3,6 +3,7 @@
 module datapath(
     input  logic        clk, reset,
     input  logic        mem_stall,
+    input  logic        hw_int,
     
     input  logic        memtoregE, memtoregM, memtoregW,
     input  logic        pcsrcD, branchD,
@@ -28,7 +29,7 @@ module datapath(
     logic forwardaD, forwardbD;
     logic [1:0] forwardaE, forwardbE;
     logic stallF, stallD;
-    logic flush_exc;
+    logic flush_exc, int_pending;
 
     // IF stage
     logic [31:0] pcplus4F, pcnextbrF, pcnextF_normal, pcnextF;
@@ -77,8 +78,11 @@ module datapath(
     mux2 #(32) pcmux (
         .d0(pcnextbrF), .d1({pcplus4D[31:28], instrD[25:0], 2'b00}), .s(jumpD), .y(pcnextF_normal)
     );
+    
+    // PC Trap Mux: jump to 0x80 on syscall or async interrupt, or to EPC on eret
+    wire trap_to_80 = syscallM | int_pending;
     mux3 #(32) pcexc_mux (
-        .d0(pcnextF_normal), .d1(32'h00000080), .d2(epc), .s({eretM, syscallM}), .y(pcnextF)
+        .d0(pcnextF_normal), .d1(32'h00000080), .d2(epc), .s({eretM, trap_to_80}), .y(pcnextF)
     );
     
     flopenr #(32) pcreg (
@@ -89,9 +93,11 @@ module datapath(
     );
 
     // --- IF/ID Pipeline Register ---
-    flopenrc #(32) r1D (.clk(clk), .reset(reset), .en(~stallD & ~mem_stall), .clear(pcsrcD | jumpD | flush_exc), .d(instrF), .q(instrD));
-    flopenrc #(32) r2D (.clk(clk), .reset(reset), .en(~stallD & ~mem_stall), .clear(pcsrcD | jumpD | flush_exc), .d(pcplus4F), .q(pcplus4D));
-    flopenrc #(32) r3D (.clk(clk), .reset(reset), .en(~stallD & ~mem_stall), .clear(pcsrcD | jumpD | flush_exc), .d(pcF), .q(pcD));
+    // Flush IF/ID on branch/jump, sync exception, or async interrupt
+    wire flush_if_id = pcsrcD | jumpD | flush_exc | int_pending;
+    flopenrc #(32) r1D (.clk(clk), .reset(reset), .en(~stallD & ~mem_stall), .clear(flush_if_id), .d(instrF), .q(instrD));
+    flopenrc #(32) r2D (.clk(clk), .reset(reset), .en(~stallD & ~mem_stall), .clear(flush_if_id), .d(pcplus4F), .q(pcplus4D));
+    flopenrc #(32) r3D (.clk(clk), .reset(reset), .en(~stallD & ~mem_stall), .clear(flush_if_id), .d(pcF), .q(pcD));
 
     // --- ID Stage ---
     assign opD = instrD[31:26];
@@ -114,13 +120,15 @@ module datapath(
     assign equalD = (eqcmpaD == eqcmpbD);
 
     // --- ID/EX Pipeline Register ---
-    flopenrc #(32) r1E (.clk(clk), .reset(reset), .en(~mem_stall), .clear(flushE | flush_exc), .d(rd1D), .q(rd1E));
-    flopenrc #(32) r2E (.clk(clk), .reset(reset), .en(~mem_stall), .clear(flushE | flush_exc), .d(rd2D), .q(rd2E));
-    flopenrc #(32) r3E (.clk(clk), .reset(reset), .en(~mem_stall), .clear(flushE | flush_exc), .d(signimmD), .q(signimmE));
-    flopenrc #(5)  r4E (.clk(clk), .reset(reset), .en(~mem_stall), .clear(flushE | flush_exc), .d(rsD), .q(rsE));
-    flopenrc #(5)  r5E (.clk(clk), .reset(reset), .en(~mem_stall), .clear(flushE | flush_exc), .d(rtD), .q(rtE));
-    flopenrc #(5)  r6E (.clk(clk), .reset(reset), .en(~mem_stall), .clear(flushE | flush_exc), .d(rdD), .q(rdE));
-    flopenrc #(32) r7E (.clk(clk), .reset(reset), .en(~mem_stall), .clear(flushE | flush_exc), .d(pcD), .q(pcE));
+    // If int_pending is true, we must also flush ID/EX so the squashed instruction in ID doesn't execute
+    wire flush_id_ex = flushE | flush_exc | int_pending;
+    flopenrc #(32) r1E (.clk(clk), .reset(reset), .en(~mem_stall), .clear(flush_id_ex), .d(rd1D), .q(rd1E));
+    flopenrc #(32) r2E (.clk(clk), .reset(reset), .en(~mem_stall), .clear(flush_id_ex), .d(rd2D), .q(rd2E));
+    flopenrc #(32) r3E (.clk(clk), .reset(reset), .en(~mem_stall), .clear(flush_id_ex), .d(signimmD), .q(signimmE));
+    flopenrc #(5)  r4E (.clk(clk), .reset(reset), .en(~mem_stall), .clear(flush_id_ex), .d(rsD), .q(rsE));
+    flopenrc #(5)  r5E (.clk(clk), .reset(reset), .en(~mem_stall), .clear(flush_id_ex), .d(rtD), .q(rtE));
+    flopenrc #(5)  r6E (.clk(clk), .reset(reset), .en(~mem_stall), .clear(flush_id_ex), .d(rdD), .q(rdE));
+    flopenrc #(32) r7E (.clk(clk), .reset(reset), .en(~mem_stall), .clear(flush_id_ex), .d(pcD), .q(pcE));
 
     // --- EX Stage ---
     mux3 #(32) amuxE (.d0(rd1E), .d1(resultW_final), .d2(aluoutM), .s(forwardaE), .y(srcaE));
@@ -148,9 +156,15 @@ module datapath(
         .a(rdM),
         .wd(writedataM),
         .rd(cp0_rdM),
+        
         .hw_exc(syscallM),
         .hw_exc_epc(pcM),
         .hw_exc_cause(32'd8), // Syscall cause = 8
+        
+        .hw_int(hw_int),
+        .pc_id(pcD), // The instruction we are interrupting/squashing
+        .int_pending(int_pending),
+        
         .epc(epc)
     );
 
