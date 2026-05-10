@@ -5,7 +5,7 @@ module imem(
     output logic [31:0] rd
 );
 
-    logic [31:0] RAM[0:63]; // 64 words (256 bytes) of instruction memory
+    logic [31:0] RAM[0:255]; // 256 words (256 bytes) of instruction memory
 
     initial begin
         // Initialize memory with machine code from a file.
