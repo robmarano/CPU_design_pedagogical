@@ -1,13 +1,11 @@
-# PR Summary: Untracked Files Clean-up
+# PR Summary: Makefile Simplification for Student Labs
 
 ## Objective
-Resolve lingering untracked files in the working directory to ensure a clean git state and proper dependency management for fresh repository clones.
+Streamline the execution of the CPU simulations for students by introducing a unified Makefile with clean, abstract targets for each lab phase, and updating the LAB_MANUAL.md to reflect these simpler commands.
 
 ## Work Completed
-- **Deleted fpr.sv**: Removed orphaned Floating Point Register file code. The architecture utilizes a Unified Register File, rendering this module obsolete.
-- **Tracked font8x8_basic.h**: Committed the third-party VGA font header required by the Verilator/SDL2 terminal wrapper. This ensures make works cleanly out of the box for other developers.
-- **Tracked MMIO_DESIGN.md**: Committed the historical MMIO design specification to the docs/ folder.
-- **Updated .gitignore**: Added *.dat to ignore assembled machine code binaries, treating them as transient build artifacts rather than source code.
+- **Makefile**: Created an elegant, top-level Makefile that completely abstracts away the python3, iverilog, and verilator compilation steps. It includes targets lab1, lab2, lab3, and lab4 which automatically assemble the required .asm programs into memfile.dat, compile the SystemVerilog hardware models, and execute the binaries.
+- **LAB_MANUAL.md**: Rewrote the execution instructions. Students now only need to run a single command (e.g., make lab3) to see the architecture in action, significantly lowering the barrier to entry.
 
 ## Pending
 - None. Ready for review and merge.
