@@ -36,7 +36,8 @@ lab2:
 # --- Lab 3: Pipelined CPU (Quake III) ---
 lab3:
 	@echo "==> Assembling quake3.asm"
-	$(ASSEMBLER) programs/quake3.asm programs/memfile_quake3.dat
+	$(ASSEMBLER) programs/quake3.asm memfile.dat
+	cp memfile.dat programs/memfile_quake3.dat
 	@echo "==> Compiling Pipelined CPU Simulation"
 	$(IVCC) -I src/pipelined_computer -o quake_sim tests/pipelined_computer/tb_quake.sv src/pipelined_computer/*.sv
 	@echo "==> Running Quake III Fast Inverse Square Root"

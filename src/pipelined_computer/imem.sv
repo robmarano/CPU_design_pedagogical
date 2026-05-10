@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 
-module imem #(parameter INIT_FILE = "programs/memfile.dat") (
+module imem #(parameter INIT_FILE = "memfile.dat") (
     input  logic [31:0] a,
     output logic [31:0] rd
 );

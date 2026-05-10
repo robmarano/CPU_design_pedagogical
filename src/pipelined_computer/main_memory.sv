@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 
-module main_memory #(parameter INIT_FILE = "programs/memfile.dat") (
+module main_memory #(parameter INIT_FILE = "memfile.dat") (
     input  logic         clk, reset,
     input  logic         mem_read, mem_write,
     input  logic [31:0]  a, wd,
