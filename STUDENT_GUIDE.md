@@ -242,3 +242,48 @@ Now that the hardware works, we must write the software to handle the crash.
 *   It adds 4 to the bookmark (`addi , , 4`) because we want to return to the instruction *after* the `syscall`, not the `syscall` itself (otherwise we'd be stuck in an infinite loop!).
 *   It saves the new bookmark (`mtc0 , 14`).
 *   Finally, it calls `eret` (Exception Return). The hardware sees `eret`, loads the EPC back into the PC, and execution resumes perfectly as if nothing ever happened!
+
+# Epic 7: Phase 6 - FPU Coprocessor and Quake III Fast Inverse Square Root
+
+Welcome to Phase 6. We have a highly optimized pipeline, caching, and exception handling. Now it is time to do some serious math.
+
+### Step 25: The Legendary Fast Inverse Square Root
+In the late 90s, calculating `1 / sqrt(x)` was required to compute lighting and reflections in 3D graphics (like the game Quake III), but normal division and square roots were incredibly slow on CPUs of that era. John Carmack (and others) popularized a "magic" algorithm that bypassed the slow math units using bit-level hacking:
+
+```c
+float Q_rsqrt( float number ) {
+    long i;
+    float x2, y;
+    const float threehalfs = 1.5F;
+
+    x2 = number * 0.5F;
+    y  = number;
+    i  = * ( long * ) &y;                       // EVIL BIT HACK
+    i  = 0x5f3759df - ( i >> 1 );               // The Magic Number
+    y  = * ( float * ) &i;
+    y  = y * ( threehalfs - ( x2 * y * y ) );   // Newton Iteration
+    return y;
+}
+```
+
+To execute this on our CPU, we need floating point multiplication (`mul.s`), subtraction (`sub.s`), integer bit shifting (`srlv`), and normal integer subtraction (`sub`).
+
+### Step 26: The Floating Point Unit (`fpu.sv`)
+We built a combinational IEEE-754 Single Precision Floating Point Unit. It separates the 32-bit floats into a Sign bit, an 8-bit Exponent, and a 23-bit Fraction.
+*   **Multiplication:** It XORs the signs, adds the exponents (and subtracts the 127 bias), and multiplies the fractions.
+*   **Subtraction:** It aligns the fractions by shifting the smaller exponent to match the larger one, then performs the subtraction, and finally normalizes the result by shifting it back until there is a leading `1`.
+
+### Step 27: The Unified Register File (A Pedagogical Trick)
+In a true MIPS CPU, the FPU is "Coprocessor 1" (CP1). It has its own massive bank of 32 floating-point registers (`` to ``). To move data between the integer registers and floating point registers, you must use `mtc1` and `mfc1` instructions.
+
+*   **The Problem:** Building a second 32-register file, expanding the hazard unit, and adding a second forwarding network would double the size of our datapath!
+*   **The Architect's Solution:** We mapped `mul.s` and `sub.s` directly into our primary integer ALU. By using the exact same General Purpose Registers (GPRs) for both integers and floats, the type conversion in the Quake 3 algorithm (`i = * ( long * ) &y`) becomes completely **FREE**. The bits just sit in the register, and the CPU treats them as an integer when performing `sub` and as a float when performing `mul.s`.
+
+### Step 28: Running the Simulation
+We authored `quake3.asm` and ran it.
+1. The CPU loads `2.0f` (`0x40000000`).
+2. It shifts the integer representation right by 1, and subtracts it from `0x5f3759df`.
+3. It performs the Newton Iteration.
+4. Exactly **24 clock cycles** later, the CPU writes `0x3f34f95e` to memory. 
+
+`0x3f34f95e` translates to **0.706929**. The exact mathematical value of `1 / sqrt(2.0)` is 0.707106. Our little educational CPU successfully replicated one of the most famous hacks in computer science history in hardware!

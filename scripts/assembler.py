@@ -8,6 +8,12 @@ def assemble(input_file, output_file):
         'and':  (0x00, 0x24, 'R'),
         'or':   (0x00, 0x25, 'R'),
         'slt':  (0x00, 0x2a, 'R'),
+        'srlv': (0x00, 0x06, 'R'),
+        
+        # Mapped as pseudo R-type for GPR usage
+        'mul.s':(0x00, 0x28, 'R'), 
+        'sub.s':(0x00, 0x29, 'R'), 
+        
         'addi': (0x08, None, 'I'),
         'lw':   (0x23, None, 'I_mem'),
         'sw':   (0x2b, None, 'I_mem'),
@@ -27,6 +33,7 @@ def assemble(input_file, output_file):
         if s.startswith('s') and len(s)==2: return 16 + int(s[1])
         if s.startswith('a') and len(s)==2: return 4 + int(s[1])
         if s.startswith('v') and len(s)==2: return 2 + int(s[1])
+        if s.startswith('f'): return int(s.replace('f', '')) # Treat $fX same as $X
         return int(s)
 
     lines = []
@@ -63,18 +70,15 @@ def assemble(input_file, output_file):
         parts = [p for p in parts if p]
         mnem = parts[0]
         
+        print("Assembling:", inst, parts)
         if mnem not in opcodes:
             print(f"Error: Unknown instruction {mnem}")
             sys.exit(1)
             
-        # DEBUG
-        if mnem not in opcodes:
-            print(f'Missing: {mnem}')
-            sys.exit(1)
         op, funct, typ = opcodes[mnem]
         
         if typ == 'R':
-            if len(parts) < 4: print(f'Error on R-type: {inst}'); sys.exit(1)
+            # e.g., add rd, rs, rt -> parts[1]=rd, parts[2]=rs, parts[3]=rt
             rd = reg(parts[1])
             rs = reg(parts[2])
             rt = reg(parts[3])

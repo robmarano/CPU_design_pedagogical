@@ -16,11 +16,18 @@ module aludec(
                 6'b100100: alucontrol = 4'b0000; // and
                 6'b100101: alucontrol = 4'b0001; // or
                 6'b101010: alucontrol = 4'b0111; // slt
-                6'b100111: alucontrol = 4'b0011; // nor
+                
                 6'b011000: alucontrol = 4'b1000; // mult
                 6'b011010: alucontrol = 4'b1001; // div
                 6'b010000: alucontrol = 4'b0101; // mfhi
                 6'b010010: alucontrol = 4'b0100; // mflo
+                
+                6'b000110: alucontrol = 4'b1010; // srlv
+                
+                // Floating point mapped into ALU
+                6'b101000: alucontrol = 4'b1100; // mul.s
+                6'b101001: alucontrol = 4'b1101; // sub.s
+                
                 default:   alucontrol = 4'bxxxx; // ???
             endcase
             default: alucontrol = 4'b0010; // default to add
