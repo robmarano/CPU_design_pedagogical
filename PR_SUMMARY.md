@@ -1,14 +1,13 @@
-# PR Summary: Documentation, Architecture Diagrams, and Clean-up
+# PR Summary: Document Pipeline Bubble Trap and Finalize README
 
 ## Objective
-Update the documentation to accurately reflect the final state of the Pipelined CPU, including the FPU, Cache, MMIO, and Hardware Interrupts. Clean up the git repository by ignoring temporary simulator builds, waveform files, and one-off Python scripts.
+Document the debugging session that uncovered the Pipeline Bubble Trap edge case, ensuring students understand the complexity of asynchronous interrupts in pipelined architectures. Also, write a proper README to showcase the features and build instructions for the repository.
 
 ## Work Completed
-- **.gitignore Updates**: Added rules to ignore obj_dir/, *_sim, *.vcd, and fix*.py. This ensures the repository stays clean.
-- **ARCHITECTURE.md Updates**: 
-  - Added a comprehensive Full System Architecture Diagram using Mermaid, visualizing the CPU Pipeline, Memory Hierarchy (L1 & DRAM), Peripherals (CP0, UART MMIO), and how the interrupt logic wires them all together.
-  - Added a Sequence Diagram (SDL2 Keyboard Interrupt Sequence) that traces a physical keypress from the macOS host, through the Verilator C++ wrapper, into the MMIO UART, triggering Coprocessor 0, executing the software interrupt handler, and returning via eret.
-  - Updated the 4-bit ALU Control Mapping table to include the new FPU instructions (mul.s, sub.s) and the shift instruction (srlv).
+- **STUDENT_GUIDE.md**: Added Step 33, explaining the Pipeline Bubble Trap (an interrupt hitting while the ID stage holds a flushed NOP), how it caused a reboot bug, and how introducing validD solved it.
+- **ARCHITECTURE.md**: Added a dedicated section detailing the Pipeline Bubble Trap edge case alongside a Mermaid sequence diagram comparing the naive EPC capture implementation vs the fixed validD-aware implementation.
+- **README.md**: Completely rewrote the root README to serve as an attractive project landing page. Included feature highlights (Pipelining, Cache, FPU, Exceptions, MMIO Terminal), prerequisite instructions (Verilator, SDL2), and build/run commands.
+- **.gitignore and Private Memory**: Prevented temporary debugging scripts (sim_debug) from being checked in, while recording their diagnostic value into the private MEMORY file.
 
 ## Pending
 - None. Ready for review and merge.

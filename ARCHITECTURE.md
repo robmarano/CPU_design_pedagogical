@@ -96,3 +96,32 @@ sequenceDiagram
 | `1010` | SRLV | `srlv` |
 | `1100` | MUL.S (FPU)| `mul.s` |
 | `1101` | SUB.S (FPU)| `sub.s` |
+
+### The Pipeline Bubble Trap & Asynchronous Interrupts
+
+Handling asynchronous interrupts requires precise capture of the Program Counter to ensure seamless resumption. An edge case exists when an asynchronous interrupt triggers while the pipeline has inserted a "bubble" (e.g., following a branch or jump). 
+
+If the Decode stage holds a bubble, its PC is `0x00000000`. Naively saving the Decode stage PC (`pcD`) into the EPC will cause the CPU to inadvertently reboot to address 0 upon an `eret`.
+
+The solution introduces a `validD` flag. When an instruction is flushed, `validD` is pulled low. If an interrupt fires while `validD == 0`, Coprocessor 0 captures the Fetch stage PC (`pcF`) instead, representing the instruction arriving next cycle.
+
+```mermaid
+sequenceDiagram
+    participant HW as Hardware Interrupt (rx_valid)
+    participant IFID as IF/ID Pipeline Reg
+    participant CP0 as Coprocessor 0
+    
+    Note over HW, CP0: Naive Implementation (The Restart Bug)
+    HW->>CP0: Assert hw_int
+    IFID-->>CP0: pcD = 0x00000000 (Bubble)
+    CP0->>CP0: EPC = pcD (0x00000000)
+    Note over HW, CP0: eret resumes at 0x00000000 (Reboot!)
+    
+    Note over HW, CP0: Fixed Implementation (validD Aware)
+    HW->>CP0: Assert hw_int
+    IFID-->>CP0: validD = 0 (Bubble)
+    IFID-->>CP0: pcD = 0x00000000, pcF = 0x00000024
+    CP0->>CP0: EPC = (validD) ? pcD : pcF
+    Note over CP0: EPC captures 0x00000024
+    Note over HW, CP0: eret seamlessly resumes execution
+```
