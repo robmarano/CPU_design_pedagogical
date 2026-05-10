@@ -7,7 +7,8 @@ module cpu(
     output logic        memwriteM, memreadM,
     output logic [31:0] aluoutM, writedataM,
     input  logic [31:0] readdataM,
-    input  logic        mem_ready
+    input  logic        mem_ready,
+    input  logic        hw_int
 );
 
     logic [31:0] instrD;
@@ -79,6 +80,7 @@ module cpu(
     datapath dp (
         .clk(clk), .reset(reset),
         .mem_stall(mem_stall),
+        .hw_int(hw_int),
         
         .memtoregE(memtoregE), .memtoregM(memtoregM), .memtoregW(memtoregW),
         .pcsrcD(pcsrcD), .branchD(branchD),
