@@ -11,7 +11,9 @@ A complete, 5-stage pipelined MIPS32 CPU implemented in SystemVerilog. Designed 
 - **Memory-Mapped I/O (MMIO)**: A complete Verilator and SDL2 wrapper that renders an 80x24 green-on-black ASCII terminal, responding to physical host keystrokes.
 
 ## Documentation
-Check out the [STUDENT_GUIDE.md](STUDENT_GUIDE.md) for a step-by-step walkthrough of how and why each component was designed, progressing through 8 distinct Epics. 
+Check out the [LAB_MANUAL.md](LAB_MANUAL.md) for explicit command-line instructions on how to simulate and test each phase of the architecture (Single-Cycle, Multi-Cycle, and Pipelined).
+
+Also, check out the [STUDENT_GUIDE.md](STUDENT_GUIDE.md) for a conceptual walkthrough of how and why each component was designed, progressing through 8 distinct Epics. 
 
 Architectural block diagrams and ALU mappings can be found in [ARCHITECTURE.md](ARCHITECTURE.md).
 
