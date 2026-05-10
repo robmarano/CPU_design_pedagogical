@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 
-module main_memory(
+module main_memory #(parameter INIT_FILE = "programs/memfile.dat") (
     input  logic         clk, reset,
     input  logic         mem_read, mem_write,
     input  logic [31:0]  a, wd,
@@ -16,9 +16,7 @@ module main_memory(
         for (i = 0; i < 256; i = i + 1) begin
             RAM[i] = 32'b0;
         end
-        // NOTE: Make sure to change the file name for different tests!
-        // $readmemh("programs/memfile_exc_before.dat", RAM);
-        // We will read it from the testbench using hierarchical names to avoid hardcoding here!
+        if (INIT_FILE != "") $readmemh(INIT_FILE, RAM);
     end
 
     // FSM to simulate 5-cycle memory latency
