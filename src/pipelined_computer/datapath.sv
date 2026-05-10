@@ -165,7 +165,8 @@ module datapath(
         .pc_id(pcD), // The instruction we are interrupting/squashing
         .int_pending(int_pending),
         
-        .epc(epc)
+        .epc(epc),
+        .eret_exec(eretM & ~mem_stall)
     );
 
     // --- MEM/WB Pipeline Register ---

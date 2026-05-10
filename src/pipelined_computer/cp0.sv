@@ -17,7 +17,8 @@ module cp0(
     input  logic [31:0] pc_id,       // PC of instruction currently in Decode
     
     output logic        int_pending, // Tells Datapath to flush ID and trap
-    output logic [31:0] epc          // Sent to PC mux for eret
+    output logic [31:0] epc,         // Sent to PC mux for eret
+    input  logic        eret_exec    // Clears EXL on eret
 );
 
     logic [31:0] status;
@@ -43,6 +44,8 @@ module cp0(
             status[1] <= 1'b1;
             cause     <= 32'b0; // 0 = Hardware Interrupt
             epc_reg   <= pc_id;   // Save PC of the squashed ID instruction
+        end else if (eret_exec) begin
+            status[1] <= 1'b0; // Clear Exception Level on eret
         end else if (we) begin
             case(a)
                 12: status  <= wd;
