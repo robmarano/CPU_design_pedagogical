@@ -287,3 +287,31 @@ We authored `quake3.asm` and ran it.
 4. Exactly **24 clock cycles** later, the CPU writes `0x3f34f95e` to memory. 
 
 `0x3f34f95e` translates to **0.706929**. The exact mathematical value of `1 / sqrt(2.0)` is 0.707106. Our little educational CPU successfully replicated one of the most famous hacks in computer science history in hardware!
+
+# Epic 8: Phase 7 - Memory-Mapped I/O and Hardware Interrupts
+
+Welcome to Phase 7! Our CPU can crunch floating-point numbers, but it lives in a dark, silent box. A computer is useless without I/O (Input/Output). In this phase, we connect our CPU to the real world—specifically, a host macOS terminal window and a physical keyboard.
+
+### Step 29: Memory-Mapped I/O (MMIO)
+Modern CPUs do not have dedicated "print" or "read keyboard" instructions. Instead, they use a trick called **Memory-Mapped I/O**.
+*   **The Architect's Task:** We updated `computer.sv` to intercept memory requests. 
+*   If the CPU tries to read or write to addresses starting with `0x00007F...`, it completely bypasses the L1 Cache and the Data RAM. Instead, those reads and writes are routed to external pins connected to our Verilator wrapper.
+    *   `0x00007F04` (RX_DATA): Reading this grabs a keystroke from the host OS.
+    *   `0x00007F0C` (TX_DATA): Writing an ASCII character here sends it straight to the screen!
+
+### Step 30: Asynchronous Hardware Interrupts
+Polling (constantly checking if a key was pressed) wastes CPU cycles. Instead, we use **Interrupts**.
+*   **Synchronous Exceptions:** (Like `syscall`) We know exactly when they happen, so we trigger them in the MEM stage to flush any trailing instructions.
+*   **Asynchronous Interrupts:** (Like a keyboard press) These happen randomly!
+*   **The Architect's Task:** We wired the `rx_valid` signal from the keyboard directly into Coprocessor 0 (`cp0.sv`). When a key is pressed, if interrupts are enabled (Status.IE = 1), the datapath triggers an interrupt in the **Decode (ID)** stage.
+*   By triggering in ID, the CPU safely saves the PC of the instruction that hasn't executed yet into the EPC, flushes the `IF` and `ID` pipeline registers, and jumps to the handler at `0x80`. The instructions already in the EX, MEM, and WB stages finish cleanly without being corrupted!
+
+### Step 31: The Verilator SDL2 Wrapper
+We wrote a C++ program (`src/verilator/sim_main.cpp`) that uses the **SDL2** graphics library.
+*   It spins up an OS window with a green-on-black color scheme.
+*   It maintains a 2D array of 80x24 characters and renders them using a tiny embedded 8x8 font.
+*   It captures physical keystrokes on your localhost, maps them to ASCII, and triggers the hardware interrupt on your custom CPU.
+*   When your MIPS assembly program writes to `0x7F0C`, the C++ wrapper draws the character on the screen and handles scrolling.
+
+### Step 32: Interactive Firmware (`terminal.asm`)
+We wrote an assembly program that enables CP0 interrupts and then goes to sleep. When you type on your physical keyboard, the hardware freezes the sleep loop, jumps to `0x80`, reads your keystroke, echoes it to the screen, and uses `eret` to go right back to sleep!
