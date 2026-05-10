@@ -17,3 +17,6 @@ fix*.py
 
 # Debugging utilities
 sim_debug*
+
+# Assembled Machine Code Binaries
+*.dat

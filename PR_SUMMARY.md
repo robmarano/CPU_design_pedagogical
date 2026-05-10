@@ -1,13 +1,13 @@
-# PR Summary: Document Pipeline Bubble Trap and Finalize README
+# PR Summary: Untracked Files Clean-up
 
 ## Objective
-Document the debugging session that uncovered the Pipeline Bubble Trap edge case, ensuring students understand the complexity of asynchronous interrupts in pipelined architectures. Also, write a proper README to showcase the features and build instructions for the repository.
+Resolve lingering untracked files in the working directory to ensure a clean git state and proper dependency management for fresh repository clones.
 
 ## Work Completed
-- **STUDENT_GUIDE.md**: Added Step 33, explaining the Pipeline Bubble Trap (an interrupt hitting while the ID stage holds a flushed NOP), how it caused a reboot bug, and how introducing validD solved it.
-- **ARCHITECTURE.md**: Added a dedicated section detailing the Pipeline Bubble Trap edge case alongside a Mermaid sequence diagram comparing the naive EPC capture implementation vs the fixed validD-aware implementation.
-- **README.md**: Completely rewrote the root README to serve as an attractive project landing page. Included feature highlights (Pipelining, Cache, FPU, Exceptions, MMIO Terminal), prerequisite instructions (Verilator, SDL2), and build/run commands.
-- **.gitignore and Private Memory**: Prevented temporary debugging scripts (sim_debug) from being checked in, while recording their diagnostic value into the private MEMORY file.
+- **Deleted fpr.sv**: Removed orphaned Floating Point Register file code. The architecture utilizes a Unified Register File, rendering this module obsolete.
+- **Tracked font8x8_basic.h**: Committed the third-party VGA font header required by the Verilator/SDL2 terminal wrapper. This ensures make works cleanly out of the box for other developers.
+- **Tracked MMIO_DESIGN.md**: Committed the historical MMIO design specification to the docs/ folder.
+- **Updated .gitignore**: Added *.dat to ignore assembled machine code binaries, treating them as transient build artifacts rather than source code.
 
 ## Pending
 - None. Ready for review and merge.
