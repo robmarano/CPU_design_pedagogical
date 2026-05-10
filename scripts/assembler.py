@@ -122,6 +122,9 @@ def assemble(input_file, output_file):
 
         machine_code.append(f"{code:08x}")
 
+    while len(machine_code) < 256:
+        machine_code.append("00000000")
+
     with open(output_file, 'w') as f:
         for c in machine_code:
             f.write(c + '\n')

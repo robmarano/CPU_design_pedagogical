@@ -7,7 +7,7 @@ module dmem(
     output logic [31:0] rd
 );
 
-    logic [31:0] RAM[0:63]; // 64 words (256 bytes) of data memory
+    logic [31:0] RAM[0:255]; // 64 words (256 bytes) of data memory
 
     // Combinational read: Address is shifted to access words (a[31:2])
     assign rd = RAM[a[31:2]];

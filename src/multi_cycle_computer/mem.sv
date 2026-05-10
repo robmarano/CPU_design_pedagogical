@@ -7,7 +7,7 @@ module mem(
     output logic [31:0] rd
 );
 
-    logic [31:0] RAM[0:63]; // 64 words (256 bytes) of unified memory
+    logic [31:0] RAM[0:255]; // 64 words (256 bytes) of unified memory
     
     initial begin
         $readmemh("memfile.dat", RAM);
