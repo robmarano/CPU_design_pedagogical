@@ -6,3 +6,11 @@ signext_sim
 .gemini/
 cpu-architect/
 cpu-architect.skill
+
+# Simulation and Build artifacts
+obj_dir/
+*_sim
+*.vcd
+
+# Temporary Python fix scripts
+fix*.py
