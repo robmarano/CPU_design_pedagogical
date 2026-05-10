@@ -52,7 +52,7 @@ obj_dir/Vcomputer: obj_dir/Vcomputer.mk
 
 lab4: obj_dir/Vcomputer
 	@echo "==> Assembling terminal.asm"
-	$(ASSEMBLER) programs/terminal.asm programs/memfile.dat
+	$(ASSEMBLER) programs/terminal.asm memfile.dat
 	@echo "==> Launching Interactive MMIO Terminal"
 	./obj_dir/Vcomputer
 
