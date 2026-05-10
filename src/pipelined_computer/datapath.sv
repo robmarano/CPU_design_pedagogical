@@ -36,6 +36,7 @@ module datapath(
     
     // ID stage
     logic [31:0] pcplus4D, signimmD, signimmshD, pcD;
+    logic        validD;
     logic [31:0] rd1D, rd2D;
     logic [4:0]  rsD, rtD, rdD;
     logic [31:0] eqcmpaD, eqcmpbD;
@@ -98,6 +99,7 @@ module datapath(
     flopenrc #(32) r1D (.clk(clk), .reset(reset), .en(~stallD & ~mem_stall), .clear(flush_if_id), .d(instrF), .q(instrD));
     flopenrc #(32) r2D (.clk(clk), .reset(reset), .en(~stallD & ~mem_stall), .clear(flush_if_id), .d(pcplus4F), .q(pcplus4D));
     flopenrc #(32) r3D (.clk(clk), .reset(reset), .en(~stallD & ~mem_stall), .clear(flush_if_id), .d(pcF), .q(pcD));
+    flopenrc #(1)  r4D (.clk(clk), .reset(reset), .en(~stallD & ~mem_stall), .clear(flush_if_id), .d(1'b1), .q(validD));
 
     // --- ID Stage ---
     assign opD = instrD[31:26];
@@ -162,7 +164,7 @@ module datapath(
         .hw_exc_cause(32'd8), // Syscall cause = 8
         
         .hw_int(hw_int),
-        .pc_id(pcD), // The instruction we are interrupting/squashing
+        .pc_id(validD ? pcD : pcF), // The instruction we are interrupting/squashing
         .int_pending(int_pending),
         
         .epc(epc),
